@@ -9,7 +9,7 @@
 
 모든 함수형 언어는 클로저를 포함한다.
 
-```clojure
+```groovy
 class Employee {
   def name, salary
 }
@@ -21,11 +21,11 @@ def paidMore(amount) {
 isHighPaid = paidMore(100000)
 ```
 
-위 예제에서 `paidMore`라는 함수의 리턴 값은 **클로저**라는 코드 블록이다. 여기서 100,000이라는 값은 코드 블록에 **바인딩**되었으며, 추우에 `Employee` 객체의 인스턴스를 받아 직원의 연봉과 바인딩된 값(100,000)을 비교한다. 클로저가 생성될 때에 코드 블록의 스코프에 포함된 인수들을 둘러싼 상자가 같이 만들어져서 이름이 클로저가 되었다. 클로저는 함수형 언어나 프레임워크에서 코드 블록을 다양한 상황에서 실행하게 해주는 메커니즘으로 많이 쓰인다. 클로저를 `map()`과 같은 고계 함수에 전달하는 게 대표적인 예
+위 예제에서 `paidMore`라는 함수의 리턴 값은 **클로저**라는 코드 블록이다. 여기서 100,000이라는 값은 코드 블록에 **바인딩**되었으며, 추후에 `Employee` 객체의 인스턴스를 받아 직원의 연봉과 바인딩된 값(100,000)을 비교한다. 클로저가 생성될 때에 코드 블록의 스코프에 포함된 인수들을 둘러싼 상자가 같이 만들어져서 이름이 클로저가 되었다. 클로저는 함수형 언어나 프레임워크에서 코드 블록을 다양한 상황에서 실행하게 해주는 메커니즘으로 많이 쓰인다. 클로저를 `map()`과 같은 고계 함수에 전달하는 게 대표적인 예
 
-**Closure**란 단어의 어원은 **문맥을 포괄함(Enclosing context)**이다. 클로저 인스턴스는 *생성될 때 스코프 내에 있던 모든 것을 캡슐화하여 유지*한다. 클로저를 지원하지 않는 경우에도 여러 변형된 (익명 클래스나 제네릭을 사용한) 구현이 가능하지만, 개발자가 *직접 내부 상태를 관리*해야 한다. 클로저는 내부 상태의 관리를 언어나 프레임워크에 맡겨 버린다. 여기서 왜 클로저의 사용이 함수적 사고를 예시하는 지가 분명해진다.
+**Closure**란 단어의 어원은 *문맥을 포괄함(Enclosing context)* 이다. 클로저 인스턴스는 *생성될 때 스코프 내에 있던 모든 것을 캡슐화하여 유지*한다. 언어에서 클로저를 지원하지 않는 경우에도 여러 변형된 (익명 클래스나 제네릭을 사용한) 구현이 가능하지만, 개발자가 *직접 내부 상태를 관리*해야 한다. 클로저는 내부 상태의 관리를 언어나 프레임워크에 맡겨 버린다. 여기서 왜 클로저의 사용이 함수적 사고를 예시하는 지가 분명해진다.
 
-클로저는 *지연 실행(deferred execution)*의 좋은 예이다. 클로저 블록에 코드를 바인딩함으로써 그 블록의 실행을 나중으로 연기할 수 있다.
+클로저는 *지연 실행(deferred execution)* 의 좋은 예이다. 클로저 블록에 코드를 바인딩함으로써 그 블록의 실행을 나중으로 연기할 수 있다.
 
 *명령형 언어*는 **상태**로 프로그래밍 모델을 만든다. *클로저*는 코드와 문맥을 한 구조로 캡슐화해서 **행위**의 모델을 만들 수 있게 해준다.
 
@@ -42,7 +42,7 @@ isHighPaid = paidMore(100000)
 커링은 체인의 다음 함수를 리턴하는 반면에, 부분 적용은 주어진 값을 인수에 바인딩시켜서 인수가 더 적은 함수를 만든다. 예를 들어, `process(x,y,z)`의 완전히 커링된 버전은 `process(x)(y)(z)`이다. 각각의 함수가 일인수 함수를 리턴하는 일인수 함수이다. `process(x,y,z)`의 인수 하나를 부분 적용하면 인수 두 개짜리의 `process(y,z)`가 된다.
 
 #### 그루비
-그루비는 커링은 Closure 클래스의 `curry()` 함수를 사용하여 구현한다.
+그루비의 커링은 `Closure` 클래스의 `curry()` 함수를 사용하여 구현한다.
 
 ```groovy
 def product = { x, y -> x * y }
@@ -115,4 +115,122 @@ assert(Math.round(costOfApples) == 280)
 ```
 
 ##### 부분 (제약이 있는) 함수
+스칼라의 `PartialFunction` 트레이트는 [6장](Chapter6_Advance.md)에서 자세히 다룰 패턴 매칭에 사용하려고 설계된 것이다. 이는 부분 적용 함수를 생성하지 않는다. *특정한 값이나 자료형에만 적용되는 함수*를 만드는데 사용할 수 있다.
 
+`case` 블록은 부분 적용 함수가 아니라 부분함수를 정의한다. *부분 함수(Partial function)* 는 허용되는 값을 제한하는 방법을 제공한다. 아래 예제 코드에서와 같이, `map`은 서로 다른 타입의 값을 가진 컬렉션에서는 사용할 수 없지만, `collect`는 정의되어 있는 값(정수)만을 collect 할 수 있다.
+
+```scala
+List(1, 3, 5, "seven") map { case i: Int => i + 1 } // scala.MatchError:seven (of class java.lang.String)
+List(1, 3, 5, "seven") collect { case i: Int => i + 1 } // List(2, 4, 6)
+```
+
+부분 함수를 정의하려면 아래와 같이 `PartialFunction` 트레이트를 사용할 수도 있다. `PartialFunction` 이 아니라 `case` 블록과 방호블록(Guard condition)을 사용할 수도 있는데, 위의 코드 같은 경우 `answerUnits(0)` 를 호출할 경우 `ArithmeticException`이 나지만, `case` 블록을 사용한 경우 `MatchError`가 발생한다.
+
+```scala
+val answerUnits = new PartialFunction[Int, Int] {
+  def apply(d: Int) = 42 / d
+  def isDefinedAt(d: Int) = d != 0
+}
+
+// use case
+val pAnswerUnits: PartialFunction[Int, Int] =
+  { case d: Int if d != 0 => 42 / 0 }
+```
+
+`map()` 과 `collect()`가 다르게 작동하는 것은 이 부분함수의 작동 박식 떄문이다. `collect()`는 `isDefinedAt()`을 불러 맞지 않는 요소는 무시한다.
+
+##### 보편적인 용례
+###### 함수 팩토리
+커링(또는 부분 적용)은 전통적인 객체지향 언어에서 *팩토리 함수(factory function)* 를 구현할 상황에서 사용하면 좋다.
+```groovy
+def adder = { x, y -> x + y }
+def incrementer = adder.curry(1)
+
+println "increment 7: ${incrementer(7)}" // 8
+```
+
+###### 템플릿 메서드 패턴
+이 패턴은 구현의 유연성을 보장하기 위해서 내부의 추상 메서드를 사용하는 겉껍질을 정의하는 데 있다. 부분 적용을 사용해 이미 알려진 기능을 제공하고 나머지 인수들은 추후에 구현하도록 남겨두는 것은 이 패턴과 흡사하다. [6장 참조](Chapter6_Advance.md)
+
+###### 묵시적인 값
+비슷한 인수 값들로 여러 함수를 연속적으로 불러올 때는 커링을 사용하여 *묵시적 인수 값*을 제공할 수 있다. 아래는 자료 저장 프레임워크를 사용할 때, 첫번째 인수인 데이터 소스를 묵시적으로 제공한다.
+```clojure
+(defn db-connect [data-source query params]
+  ...)
+
+(defn dbc (partial db-connect "db/some-data-source"))
+
+(dbc "select * from %1" "cust")
+```
+
+#### 3.3.2 재귀
+재귀란 자신을 재참조하여 같은 프로세스를 반복하는 것을 말한다. 구체적으로 말해 같은 메서드를 반복해서 호출하여 컬렉션을 각 단계마다 줄여가면서 반복 처리하는 것을 말한다. (종료 조건 명심!) 재귀로 짠 코드가 이해가 쉬운 이유는 *문제의 핵심이 같은 작업을 반복*하며 목록을 줄여가는 것이기 때문이다.
+
+##### 목록의 재조명
+배경이 C나 C계열 언어(자바 포함)인 개발자들은 목록을 색인된 컬렉션으로 생각한다. 각각의 항목을 0번부터 매겨 정렬된 위치의 컬렉션으로 생각하는 것이다.
+
+```groovy
+def numbers = [6, 28, 4, 9, 12, 4, 8, 8, 11, 45, 99, 2]
+
+def iterateList(listOfNums) {
+  listOfNums.each { n ->
+    println "${n}"
+  }
+}
+
+iterateList(numbers)
+```
+
+많은 함수형 언어는 목록을 다른 각도에서 바라본다. 색인된 위치의 컬렉션으로 여기는 대신에, *첫 요소(머리)와 나머지(꼬리)의 조합*으로 생각해보자.
+
+```groovy
+def recurseList(listOfNums) {
+  if (listOfNums.size == 0) return;
+
+  println "${listOfNums.head()}" // 첫번째 요소
+  recurseList(listOfNums.tail()) // 나머지 요소들
+}
+
+recurseList(numbers)
+```
+
+재귀는 종종 플랫폼마다 기술적 한계가 있기 때문에 만병통치약이 될 수는 없지만 길지 않은 목록을 처리하는 데에는 안전하다. 필터하는 예제를 보자. 아래 두 예제는 **누가 상태를 관리하는가?** 란 질문을 조명한다. 명령형 버전에서는 **개발자**가 관리한다. `new_list`를 생성하고, 필터된 항목을 추가하고, 마지막에 `new_list`를 리턴한다. 재귀 버전에서는 **언어**가 메서드 호출 시마다 리턴 값을 스택에 쌓아가면서 관리한다. 개발자는 `new_list`에 대한 책임을 양도하고 언어가 그것을 관리한다.
+
+###### 명령형 필터
+```groovy
+def filter(list, predicate) {
+  def new_list = []
+  list.each {
+    if (predicate(it)) {
+      new_list << it
+    }
+  }
+  return new_list
+}
+
+modBy2 = { n -> n % 2 == 0 }
+
+l = filter(1..20, modBy2)
+```
+
+###### 재귀적 필터
+```groovy
+def filterR(list, predicate) {
+  if (list.size() == 0) return list
+  if (predicate(list.head()))
+    [] + list.head() + filterR(list.tail(), predicate)
+  else
+    filterR(list.tail(), predicate)
+}
+
+modBy2 = { n -> n % 2 == 0 }
+
+l = filter(1..20, modBy2)
+```
+
+***꼬리 호출 최적화*** 는 런타임에 도움을 줄 수 있다.
+
+#### 3.4 스트림과 작업 재정렬
+명령형 사고로는 `filter` 작업을 먼저 한 후에 `map` 작업을 해야 한다. 그래야 맵 작업의 양이 줄어든다. 하지만 함수형 언어에는 `Stream`이란 추상 개념이 정의되어 있다. `Stream` 은 바탕 값(backing value)이 없다. `Stream` 은 그저 원천에서 목적지까지 값들이 흐르게 하는데, 그 사이에 있는 함수들은 **게으른** 함수 들이다. 목적지에서 값을 요구하지 않으면 결과를 내려고 시도하지도 않는다.
+
+런타임은 이런 **게으른 작업**들을 효율적으로 재정렬할 수 있다. 그러기 위해서는, `filter`같은 함수에 주어진 람다 블록에 *부수 효과*가 없어야 한다.
