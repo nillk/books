@@ -87,6 +87,7 @@ $ pyspark # python
 ### 2.2.2 첫 스파크 코드 예제
 LICENSE 파일에서 BSD 문자열이 포함된 라인 수 계산하기
 
+파일 로드
 ```scala
 scala> val licLines = sc.textFile("/usr/local/spark/LICENSE")
 scala> val lineCnt = licLines.count
@@ -275,12 +276,12 @@ res8: Array[String] = Array(16, 80, 80, 20, 94) // 80이 두 번 샘플링된 �
 
 ***`takeSample` 메서드 시그니처***
 ```scala
-def taskSample(withReplacement: Boolean, num: Int, seed: Long = Utils.random.nextLong): Array[T]
+def takeSample(withReplacement: Boolean, num: Int, seed: Long = Utils.random.nextLong): Array[T]
 ```
 
 `sample`과 `takeSample`의 차이점
-1. `takeSample`의 두 번째 인자가 정수형 변수. 즉, 개수의 기대값이 아니라 정확한 개수를 받는다.
-2. `sample`은 변환 연산자이지만 `takeSample`은 *Array를 반환*하는 액션 연산자
+1. `takeSample`의 두 번째 인자가 정수형 변수. 즉, 개수의 기대값이 아니라 정확한 샘플의 개수를 받는다.
+2. `sample`은 *변환 연산자*이지만 `takeSample`은 *Array를 반환하는 액션 연산자*
 
 #### `take` 메서드
 RDD의 파티션을 하나씩 처리해가며 지정된 개수의 요소를 모아 리턴
@@ -309,7 +310,7 @@ implicit def toStrMethods(one: ClassOne[String]) = new ClassOneStr(one)
 implicit def toIntMethods(one: ClassOne[Int]) = new ClassOneInt(one)
 ```
 
-위와 같이 구현한 경우, `ClassOne`에 넘어오는 input의 타입에 따라 `ClassOne[String]`인 경우 `ClassOneStr`로 `ClassOne[Int]`인 경우 `ClassOneInt`로 암시적으로 변환된다. 따라서 `String`이나 `Int`를 쓴 경우에는 자동으로 `duplicatedString`이나 `duplicatedInt` 메서드를 사용할 수 있다.
+위와 같이 구현한 경우, `ClassOne`에 넘어오는 input의 타입에 따라 `ClassOne[String]`인 경우 `ClassOneStr`로 `ClassOne[Int]`인 경우 `ClassOneInt`로 암시적으로 변환된다. 따라서 `input`이 `String`이나 `Int`인 경우에는 자동으로 `duplicatedString`이나 `duplicatedInt` 메서드를 사용할 수 있다.
 
 Spark의 RDD에서도 위와 같은 암시적 변환이 일어나서, 데이터 타입에 따라 맞는 메서드를 추가적으로 사용할 수 있다. `Double` 객체만 포함하는 RDD는 `org.apache.spark.rdd.DoubleRDDFunctions` 클래스 인스턴스로 자동 변환된다. 이 클래스는 요소의 전체 합계, 평균, 표준 편차, 분산, 히스토그램을 계산하는 함수들을 제공한다.
 
