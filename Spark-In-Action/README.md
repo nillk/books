@@ -1,7 +1,7 @@
 # 스파크를 다루는 기술 Spark In Action
 ## 제 1부 첫걸음
-* [1장 아파치 스파크 소개](Chapter01_Introduction_to_apache_spark.md)
-* [2장 스파크의 기초](Chapter02_Spark_fundamentals.md)
+* [1장 아파치 스파크 소개](Chapter01-Introduction-to-apache-spark.md)
+* [2장 스파크의 기초](Chapter02-Spark-fundamentals.md)
 * 3장 스파크 애플리케이션 작성하기
 * 4장 스파크 API 깊이 파헤치기
 
