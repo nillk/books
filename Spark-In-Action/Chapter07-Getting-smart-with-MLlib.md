@@ -299,3 +299,192 @@ X는 m개의 행과 n+1개의 열로 이루어진 행렬이다. W는 가중치 n
 ![gradient_descent](https://latex.codecogs.com/gif.latex?w_j%3A%3Dw_j-%5Cgamma%5Cfrac%7B%5Cpartial%7D%7B%5Cpartial%20w_j%7DC%28W%29%3Dw_j-%5Cgamma%5Cfrac%7B1%7D%7Bm%7D%5Csum_%7Bi%3D1%7D%5Em%28h%28X%5E%7B%28i%29%7D%29-y%5E%7B%28i%29%7D%29x_j%5E%7B%28i%29%7D%2C%20%5Ctext%7Bfor%20every%20j%7D)
 
 모든 가중치에 대해 이 작업을 수행(모든 가중치 매개변수를 갱신)한 후 다시 비용 함수를 계산한다. 여기서 gamma는 step-size 매개변수이다.
+
+## 7.4 데이터 분석 및 준비
+```scala
+import org.apache.spark.mllib.linalg.Vectors
+val housingLines = sc.textFile("first-edition/ch07/housing.data", 6) // RDD partion 6개
+val housingVals = housingLines.map(x => Vectors.dense(x.split(",").map(_.trim().toDouble)))
+
+```
+
+### 7.4.1 데이터 분포 분석
+`MultivariateStatisticalSummary` 객체는 행렬의 각 열별 평균값, 최댓값, 최솟값 등을 제공한다.
+
+```scala
+import org.apache.spark.mllib.linalg.distributed.RowMatrix
+val housingMat = new RowMatrix(housingVals)
+val housingStats = housingMat.computeColumnSummaryStatistics()
+// org.apache.spark.mllib.stat.MultivariateStatisticalSummary
+
+// or
+
+import org.apache.spark.mllib.stat.Statistics
+val housingStats = Statistics.colStats(housingVals)
+// org.apache.spark.mllib.stat.MultivariateStatisticalSummary
+
+housingStats.count // 전체 열 개수
+housingStats.numNonzeros // 각 컬럼에서 0이 아닌 원소의 수
+
+housingStats.mean // 각 열의 평균값
+housingStats.max // 각 열의 최댓값
+housingStats.min // 각 열의 최솟값
+housingStats.variance // 각 열의 분산
+
+housingStats.normL1 // 각 열의 L1 norm (각 열별로 원소의 절댓값을 모두 더한 값)
+housingStats.normL2 // 각 열의 L2 norm (각 열의 벡터 길이, 유클리디안 놈)
+```
+
+### 7.4.2 열 코사인 유사도 분석
+*Column cosine similarity*는 두 열을 벡터 두 개로 간주하고 이들 사이의 각도를 구한 값이다. `RowMatrix`의 `columnSimilarities` 메서드는 상삼각 행렬(upper-triangular matrix)을 저장한 분산 `CoordinateMatrix` 객체를 반환한다.
+
+> 상삼각 행렬: 행렬의 대각선 위쪽에 위치한 원소에만 값이 있고 대각선 아래쪽은 모두 0으로 채워진 행렬.
+
+```scala
+// housingColSims의 i번째 행과 j번째 열에 위치한 원소는 housingMat의 i번째 열과 j번째 열 사이의 유사도를 의미하며 -1에서 1 사이 값을 가진다.
+val housingColSims = housingMat.columnSimilarities()
+// -1: 두 열(벡터)의 방향이 완전히 반대
+// 0: 두 열(벡터)이 직각
+// 1: 두 열(벡터)의 방향이 같음
+
+def printMat(mat:BM[Double]) = {
+   print("            ")
+   for(j <- 0 to mat.cols-1) print("%-10d".format(j));
+   println
+   for(i <- 0 to mat.rows-1) { print("%-6d".format(i)); for(j <- 0 to mat.cols-1) print(" %+9.3f".format(mat(i, j))); println }
+}
+
+printMat(toBreezeD(housingColSims))
+```
+
+위와 같이 매트릭스를 찍어보면 13번째 열 즉, 목표 변수(평균 주택 가격)과 나머지 특징 변수 열 간의 유사도를 확인할 수 있다. 이 예제 데이터에서는 6번째 행(평균 방 개수)의 값이 0.949로 가장 크며 따라서 *평균 주택 가격과 평균 방 개수의 유사도가 가장 큰 것*을 확인할 수 있다. 따라서 평균 방 개수가 *단순 선형 회귀에 가장 적합한 특징 변수*라고 할 수 있다.
+
+### 7.4.3 공분산 행렬 계산
+Covariance matrix를 사용해 입력 데이터셋의 여러 칼럼(차원 또는 특징 변수) 간 유사도를 알아볼 수 있다.
+
+> 공분산 행렬: 변수 간에 선형 연관성을 모델링하는 통계 기법
+
+```scala
+val housingCovar = housingMat.computeCovariance()
+
+printMat(toBreezeM(housingCovar))
+```
+
+결과는 대칭 행렬이며, 대각선에는 각 열의 분산 값이 존재한다. 그리고 나머지 부분에는 두 변수의 공분산 값이 기입된다.
+
+공분산 값 해석
+* 0: 두 변수 사이에 선형 관계가 없음
+* 음수: 두 변수 값이 각각 평균에서 서로 반대 방향으로 이동한다는 의미
+* 양수: 두 변수 값이 각각 평균에서 서로 같은 방향으로 이동한다는 의미
+
+스파크는 또한 스피어만 상관 계수(Spearman correlation coefficient)와 피어슨 상관 계수(Pearson correlation coefficient)를 사용해 일련의 데이터 간 상관관계를 조사할 수 있는 `corr` 메서드를 제공한다.
+
+### 7.4.4 레이블 포인트로 변환
+`LabeledPoint` 구조체는 *목표 변수 값과 특징 변수 벡터로 구성*된다. 거의 모든 스파크 머신 러닝 알고리즘에 사용된다. `LabeledPoint` 클래스에 목표변수의 특징 변수를 분리해서 집어넣자.
+
+```scala
+import org.apache.spark.mllib.regression.LabeledPoint
+val housingData = housingVals.map(x => {
+  val a = x.toArray
+  LabeledPoint(a(a.length-1), Vectors.dense(a.slice(0, a.length-1))) // label, features
+})
+```
+
+### 7.4.5 데이터 분할
+훈련 데이터셋과 검증 데이터셋으로 분할
+* 훈련(training) 데이터셋: 모델 훈련에 사용 (일반적으로 전체 데이터의 80%)
+* 검증(validation) 데이터셋: 훈련에 사용하지 않은 데이터에서도 모델이 얼마나 잘 작동하는지 확인하는 용도로 사용 (일반적으로 전체 데이터의 20%)
+
+```scala
+val sets = housingData.randomSplit(Array(0.8, 0.2))
+// 지정된 비율에 근사하게 원본 데이터를 분할하고 RDD 배열로 반환
+val housingTrain = sets(0)
+val housingValid = sets(1)
+```
+
+### 7.4.6 특징 변수 스케일링 및 평균 정규화
+하지만 여전히 데이터의 분포를 살펴 보면 특징 변수 값의 범위가 변수마다 크게 다르다는 사실을 알 수 있다. 이 데이터를 그대로 사용하면 모델 결과를 해석하기 어렵고, 데이터 변환 과정에 문제가 생길 수 있으므로 표준화를 한다. 데이터 표준화는 모델 정확도에 영향을 주지 않는다.
+
+데이터 표준화 기법
+* 특징 변수 스케일링(feature scaling): 데이터 범위를 비슷한 크기로 조정
+* 평균 정규화(mean normalization): 평균이 0에 가깝도록 데이터를 옮기는 작업
+
+```scala
+import org.apache.spark.mllib.feature.StandardScaler
+// 각 표준화 기법의 사용 여부를 전달한 후, 훈련 데이터셋에 맞춰 scaler 학습
+// scaler는 입력 받은 데이터의 칼럼 요약 통계를 찾아낸 후 이 통계를 스케일링 작업에 활용
+val scaler = new StandardScaler(true, true).fit(housingTrain.map(x => x.features))
+
+val trainScaled = housingTrain.map(x => LabeledPoint(x.label, scaler.transform(x.features)))
+val validScaled = housingValid.map(x => LabeledPoint(x.label, scaler.transform(x.features)))
+```
+
+## 7.5 선형 회귀 모델 학습 및 활용
+`org.apache.spark.mllib.regression` 패키지의 `LinearRegressionModel` 클래스가 스파크의 선형 회귀 모델이며 이 객체는 선형 회귀 모델의 학습 알고리즘을 구현한 `LinearRegressionWithSGD` 클래스로 만들 수 있다. `LinearRegressionModel` 객체는 학습이 완료된 선형 회귀 모델의 배개변수가 저장된다.
+
+`LinearRegressionWithSGD` 활용법 두 가지
+1. `train` 정적 메서드 호출. 모델이 가중치만 학습하고 y절편을 학습알 수 없음
+```scala
+import org.apache.spark.mllib.regression.LinearRegressionWithSGD
+val model = LinearRegressionWithSGD.train(trainScaled, 200, 1.0)
+```
+
+2. 비표준 방식
+```scala
+import org.apache.spark.mllib.regression.LinearRegressionWithSGD
+val alg = new LinearRegressionWithSGD() // 객체 초기화
+alg.setIntercept(true) // y절편을 학습하도록 설정
+alg.optimizer.setNumInterations(200) // 반복 실행 횟수 설정
+trainScaled.cache() // 캐시하는 것이 중요. 머신 러닝 알고리즘을 포함한 반복 알고리즘들은 같은 데이터를 여러 번 재사용하기 때문
+validScaled.cache()
+val model = alg.run(trainScaled) // train 시작
+```
+
+### 7.5.1 목표 변수 값 예측
+학습된 모델이 있으면 *`predict` 메서드에 특징 변수들을 전달해 목표 변수 값을 예측*할 수 있다. 검증 데이터셋의 `LabeledPoint`를 실제 목표 변수 값과 예측 값으로 매핑해보자.
+
+모델의 전반적인 성공 여부를 정량화하는 방법으로 *평균 제곱근 오차(Root Mean Squared Error, RMSE)* 를 계산할 수 있다.
+
+```scala
+val validPredicts = validScaled.map(x => (model.predict(x.features), x.label))
+validPredicts.collect()
+
+math.sqrt(validPredicts.map{case(p, l) => math.pow(p-l,2)}.mean())
+```
+
+### 7.5.2 모델 성능 평가
+`RegressionMetrics` 클래스를 사용해 다각도로 회귀 모델을 평가할 수 있다.
+
+```scala
+import org.apache.spark.mllib.evaluation.RegressionMetrics
+val validMetrics = new RegressionMetrics(validPredicts)
+validMetrics.rootMeanSquaredError
+validMetrics.meanSquaredError
+```
+
+* `meanAbsoluteError`: 실게 값과 예측 값 사이의 절대 오차 평균
+* `r2`: 결정 계수(coefficient of determination). 0~1의 값을 가지며 *모델이 예측하는 목표 변수의 변화량을 설명하는 정도와 설명하지 못하는 정도를 나타내는 척도*다. 1에 가깝다면 목표 변수가 가진 분산의 많은 부분을 설명할 수 있다는 의미다. 하지만 목표 변수와 상관성이 적은 특징 변수를 추가해도 지표 값이 커지는 경향이 있다.
+* `explainedVariance`: r2와 유사한 지표
+
+### 7.5.3 모델 매개변수 해석
+모델이 학습한 각 가중치 값은 개별 차원이 목표 변수에 미치는 영향력을 의미하며, 따라서 특정 가중치가 0에 가깝다면 *해당 차원은 목표 변수에 크게 기여하지 못한다*는 의미이다.
+
+```scala
+println(model.weights.toArray.map(x => x.abs).zipWithIndex.sortBy(_._1).mkString(", "))
+```
+
+위 결과는 영향력이 가장 작은 차원부터 가장 큰 차원을 오름차순으로 보여준다.
+
+### 7.5.4 모델의 저장 및 불러오기
+스파크 MLlib 모델들은 대부분 `save` 메서드로 저장할 수 있다. 스파크는 지정된 경로에 새 디렉터리를 생성하고 *모델의 데이터 파일과 메타데이터 파일을 Parquet 포맷으로 저장*한다.
+
+선형 회귀 모델은 메타데이터 파일에 모델을 구현한 클래스 이름, 모델 파일의 버전, 모델에 사용된 특징 변수 개수를 저장한다. 데이터 파일에는 가중치와 y절편을 저장한다.
+
+```scala
+// save
+model.save(sc, "ch07output/model)
+
+// load
+import org.apache.spark.mllib.regression.LinearRegressionModel
+val model = LinearRegressionModel.load(sc, "ch07output/model")
+```
