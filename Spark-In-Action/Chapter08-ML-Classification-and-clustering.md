@@ -407,3 +407,178 @@ penmm.confusionMatrix // 혼동 행렬(confusion matrix) 출력
 // 즉, i, j 원소는 i번 클래스이지만 모델이 j클래스라고 예측한 예제 개수
 // 대각선 원소는 정확하게 분류한 예제 개수
 ```
+
+## 8.3 의사 결정 트리와 랜덤 포레스트
+* 의사 결정 트리: 트리 형태의 규칙 집합을 특징 변수에 적용해 입력 예제를 분류하며 규칙 집합은 알고리즘이 훈련 데이터셋에서 학습하거나 사용자가 직접 작성할 수 있다. 사용이 간편. 분류 및 회귀 분석 수행 가능. 의사 결정 규칙을 그림으로 표현할 수 있으므로 이해하기가 쉽고, 내부 동작을 직관적으로 이해 가능. 데이터 정규화가 필요 없고, 숫자형 데이터, 범주형 데이터 모두 처리 가능. 결측값에 큰 영향 받지 않음. But, 과적합 현상에 빠지기 쉬우며, 최적의 의사 결정 트리를 학습하는 문제는 NP-완전이다.
+* 랜덤 포레스트: 원본 데이터셋을 무작위로 샘플링한 데이터를 사용해 의사 결정 트리 여러 개를 한꺼번에 학습하는 알고리즘(앙상블 학습) 데이터를 무작위로 샘플링하고 모델들의 결과를 평균해 사용하는 기법을 배깅이라고 함
+
+### 8.3.1 의사 결정 트리
+특징 변수가 전체 훈련 데이터셋을 얼마나 잘 분류하는지 *불순도(impurity)* 와 *정보 이득(information gain)* 을 사용해 분류. 최적의 특징 변수(가장 정보 이득이 큰 특징 변수)를 이용해 트리 노드를 하나 생성하고, 계속해서 분기를 만들어 가는 방식. 스파크는 이진 의사 결정 트리만 생성 가능.
+
+분기에 할당된 데이터셋이 단일 클래스로 구성되어 있거나 분기의 깊이가 일정 이상일 때, 해당 분기 노드를 리프 노드로 만든다.
+
+#### 8.3.1.1 알고리즘의 동작 예제
+예를 들어 이전에 사용한 소득 예상 데이터셋은 나이가 46세보다 많으면 소득이 5만불 이상일 거라고 예측, 46세보다 적으면 성별이라는 특징 변수를 이용해 남성이면 5만불 이상일 거라고 예측, 여성이라면 교육 수준이라는 특징 변수를 선택... 과 같이 계속해서 분기를 따라 결과값을 예측하게 된다.
+
+#### 8.3.1.2 불순도와 정보 이득
+불순도 지표에는 엔트로피(entropy)와 지니 불순도(Gini impurity)가 있는데 스파크를 포함한 대부분의 머신 러닝 라이브러리는 지니 불순도를 기본 지표로 사용한다.
+
+* 엔트로피: 메시지에 포함된 정보량을 측정하는 척도로, 만약 클래스 하나로만 구성된 데이터셋이 있다면 엔트로피는 0이며 모든 클래스가 균일하게 분포된 데이터셋일수록 엔트로피가 높다. 이진 분류 문제에서 엔트로피의 최댓값은 1이다.
+* 지니 불순도: 레이블 분포에 따라 데이터셋에서 무작위로 고른 요소의 레이블을 얼마나 자주 잘못 예측하는지 계산한 척도. 이 또한 모든 클래스가 균일하게 분포되어 있을 때 가장 큰 값(이진 분류의 경우 0.5)이며, 하나의 클래스로만 구성된 데이터셋에서는 0이 된다.
+
+정보 이득은 특징 변수 F로 데이터셋 D를 나누었을 때 예상되는 불순도 감소량이다. 알고리즘은 이 정보 이득 값을 바탕으로 데이터셋을 분할한다.
+
+#### 8.3.1.3 의사 결정 트리 학습
+손글씨 숫자 데이터셋으로 의사 결정 트리 모델 훈련하는 예제 실습. 다만, 의사 결정 트리 알고리즘이 데이터셋에 있는 모든 클래스 개수를 알 수 있도록 칼럼에 메타 데이터를 추가해야 한다.
+
+```scala
+import org.apache.spark.ml.features.StringIndexer
+import org.apache.spark.ml.features.StringIndexerModel
+
+val dtsi = new StringIndexer().setInputCol("label").setOutputCol("label-i")
+val dtsm: StringIndexerModel = dtsi.fit(penlpoints)
+val pendtlpoints = dtsm.transform(penlpoints).drop("label").withColumnRenamed("label-i", "label")
+
+val pendtsets = pendtlpoints.randomSplit(Array(0.8, 0.2))
+val pendttrain = pendtsets(0).cache()
+val pendtvalid = pendtsets(1).cache()
+
+import org.apache.spark.ml.classification.DecisionTreeClassifier
+val dt = new DecisionTreeClassifier()
+dt.setMaxDepth(20)
+val dtmodel = dt.fit(pendttrain)
+```
+
+`DecisionTreeClassifier` 클래스의 매개변수
+* `maxDepth`: 트리의 최대 깊이(기본: 5)
+* `maxBins`: 연속적인 값을 가지는 특징 변수를 분할할 때 생성할 bin의 최대 개수(기본: 32)
+* `minInstancesPerNode`: 데이터셋을 분할할 때 각 분기에 반드시 할당해야 할 데이터 샘플의 최소 개수(기본: 1)
+* `minInfoGain`: 데이터셋을 분할할 때 고려할 정보 이득의 최저 값. 만약 분기의 정보 이득이 최저 값보다 낮으면 해당 분기는 버림(기본: 0)
+
+#### 8.3.1.4 의사 결정 트리 살펴보기
+의사 결정 트리의 장점 중 하나는 *트리 구조를 시각화해서 알고리즘의 동작을 직관적으로 이해할 수 있다는 점!*
+
+```scala
+dtmodel.rootNode // 트리의 루트 노드 (python은 접근 불가)
+
+import org.apache.spark.ml.tree.{InternalNode, ContinuousSplit}
+// 어떤 특징 변수로 루트 노드를 분할했는지 알 수 있음
+dtmodel.rootNode.asInstanceOf[InternalNode].split.featureIndex 
+// 예를 들어 위 결과가 15라고 나왔을 때 15번 특징 변수 값을 분할하는 데 사용한 임계치 확인
+// 범주형 변수일 경우 ContinuoutSplit이 아니라 CategoricalSplit(leftCategories, rightCategories 필드 가짐) 사용
+dtmodel.rootNode.asInstanceOf[InternalNode].split.asInstanceOf[ContinuousSplit].threshold
+// 왼쪽 자식과 오른쪽 자식
+dtmodel.rootNode.asInstanceOf[InternalNode].leftChild
+dtmodel.rootNode.asInstanceOf[InternalNode].rightChild
+```
+
+#### 8.3.1.5 모델 평가
+```scala
+val dtpredicts = dtmodel.transform(pendtvalid)
+val dtresrdd = dtpredicts.select("prediction", "label").rdd.map(row => (row.getDouble(0), row.getDouble(1)))
+
+import org.apache.spark.mllib.evaluation.MulticlassMetrics
+val dtmm = new MulticlassMetrics(dtresrdd)
+dtmm.precision
+dtmm.confusionMatrix
+```
+
+이 예제의 경우 의사 결정 트리가 로지스틱 회귀보다 나은 결과를 보임
+
+### 8.3.2 랜덤 포레스트
+의사 결정 트리를 여러 개 학습하고, 각 트리의 예측 결과를 모아서 가장 좋은 결과를 선택하는 앙상블 기법
+
+또한, 의사 결정 트리의 각 노드별로 특징 변수의 *부분 집합을 무작위 선정*하고, 이 집합 내에서만 다음 분기를 결정하는 특징 변수 배깅 기법을 사용한다. 이를 통해 의사 결정 트리들의 상관성이 높을수록 오차율이 커지는 문제를 해결할 수 있다.
+
+성능이 좋고 과적합이 덜 발생하며 학습과 사용도 쉽지만 시각화하기가 어렵고 따라서 직관적으로 해석하기도 어렵다.
+
+#### 8.3.2.1 스파크의 랜덤 포레스트 사용
+`RandomForestClassifier`에 기존 `DecisionTreeClassifier` 매개 변수 외에 추가로 사용할 수 있는 매개변수
+* `numTrees`: 학습할 트리 개수(기본: 20)
+* `featureSubsetStrategy`: 특징 변수 배깅을 수행할 방식.
+  * `all`: 모든 특징 변수 사용
+  * `onethird`: 특징 변수의 1/3을 무작위로 골라서 사용
+  * `sqrt`: 특징 변수 개수의 제곱근만큼 무작위로 골라서 사용
+  * `log2`: 특징 변수 개수에 `log2`를 취한 값만큼 무작위로 골라서 사용
+  * `auto`(기본): 분류 문제에는 `sqrt`, 회귀 문제에는 `onethird` 사용
+
+```scala
+import org.apache.spark.ml.classification.RandomForestClassifier
+val rf = new RandomForestClassifier()
+rf.setMaxDepth(20)
+val rfmodel = rf.fit(pendttrain)
+rfmodel.trees // 학습한 의사 결정 트리들 확인
+
+val rfpredicts = rfmodel.transform(pendtvalid)
+val rfresrdd = rfpredicts.select("prediction", "label").rdd.map(row => (row.getDouble(0), row.getDouble(1)))
+
+import org.apache.spark.mllib.evaluation.MulticlassMetrics
+val rfmm = new MulticlassMetrics(rfresrdd)
+rfmm.precision
+rfmm.confusionMatrix
+```
+
+이 예제에서 랜덤 포레스트 모델의 오차율은 고작 1%이다. 이 예제 뿐 아니라 랜덤 포레스트는 성능이 탁월하고 사용성이 좋아 가장 널리 사용되는 머신 러닝 알고리즘 중 하나이며, 고차원 데이터셋에서도 좋은 성능을 보인다.
+
+## 8.4 군집화
+*특정 유사도 지표에 따라 데이터셋 예제들을 다수의 그룹으로 묶는 것이 목표이며 비지도 학습.* 모든 데이터에 레이블을 부여하기 힘들거나 군집을 사전에 알 수 없는 경우 등 다양한 경우에 사용해서 군집을 찾아내고, 데이터를 더욱 잘 이해할 수 있다.
+
+군집화의 활용 예
+* 데이터를 여러 그룹으로 분할
+* 이미지 세분화(image segmentation)
+* 이상 탐지(anomaly detection)
+* 텍스트 분류(text categorization) 또는 주제 인식(topic recognition)
+* 검색 결과 그루핑
+
+스파크에 구현된 군집화 알고리즘
+* k-평균 군집화: 간단하고 널리 사용됨. 군집이 구 형태가 아니거나 크기(밀도 또는 반경)가 동일하지 않은 경우 잘 작동하지 않음. 각 데이터 예제가 속한 군집을 모델링(하드 군집화)
+* 가우스 혼합 모델: 각 군집이 가우스 분포라고 가정하고, 이 분포들의 혼합으로 군집 모형을 만듦. 각 데이터 예제가 각 군집에 속할 확률을 모델링(소프트 군집화)
+* 거듭제곱 반복 군집화: 스펙트럼 군집화의 일종으로 스파크에서는 GraphX 라이브러리를 기반으로 구현되어 있음
+
+### 8.4.1 k-평균 군집화
+1. 데이터 포인트 k개를 *무작위*로 선택해 *각 군집의 최초 중심점*으로 설정
+2. 각 중심점과 *모든 포인트 간 거리를 계산*하고, 각 포인트를 *가장 가까운 군집에 포함*
+3. 각 군집의 평균점을 계산해 군집의 새로운 중심점으로 사용
+4. 2번과 3번 단계를 반복하다가 새로운 중심점이 이전 중심점과 크게 다르지 않으면 종료
+
+이렇게 알고리즘 학습을 완료하면, 각 군집의 중심점을 알 수 있으므로 새로운 데이터가 들어와도 가장 가까운 중심점의 군집에 포함시킨다.
+
+#### 8.4.1.1 스파크의 k-평균 군집화 사용
+손글씨 데이터를 각 군집으로 묶어보자. 손글씨 데이터는 이미 표준화되어 있으므로 군집화에 바로 사용할 수 있다. 또한 군집화에서는 데이터셋을 훈련/검증 데이터셋으로 나눌 필요가 없다.
+
+`KMeans` 매개변수
+* `k`: 군집 개수(기본: 2)
+* `maxIter`: 최대 반복 횟수(반드시 지정)
+* `predictionCol`: 예측 결과 칼럼 이름(기본: prediction)
+* `featuresCol`: 특징 변수 칼럼 이름(기본: features)
+* `tol`: 수렴 허용치 (군집의 중심점이 움직인 거리가 이 값보다 작으면 반복 종료)
+* `seed`: 군집 초기화에 사용할 난수 seed
+
+```scala
+import org.apache.spark.ml.clustering.KMeans
+val kmeans = new KMeans()
+kmeans.setK(10)
+kmeans.setMaxIter(500)
+
+val kmmodel = kmeans.fit(penlpoints)
+```
+
+#### 8.4.1.2 모델 평가
+군집화는 레이블이 없고, 군집 자체를 좋거나 나쁜 군집으로 분리할 수 없기 때문에 모델 평가가 매우 어렵다. 하지만 아래 몇 가지 평가 지표가 있다.
+* 군집 비용(군집 왜곡): k-평균 군집화 모델을 평가하는 기본 지표. 각 군집의 중심점과 해당 군집에 포함된 각 데이터 포인트 간 거리를 제곱해 합산한 값. 데이터셋마다 다르므로, 동일 데이터셋으로 학습한 여러 k-평균 군집화 모델을 비교할 때 사용.
+* 군집 중심점과 평균 거리: 군집 비용을 해당 데이터셋의 예제 개수로 나눈 값의 제곱근 
+* 분할표: 각 군집에 가장 많이 포함된 레이블을 해당 군집의 레이블로 가정한 후, 군집 번호를 각 열에 나열하고 실제 레이블을 각 행에 나열해 비교한 표
+
+```scala
+kmmodel.computeCost(penlpoints) // 군집 비용 게산
+math.sqrt(kmmodel.computeCost(penlpoints)/penlpoints.count()) // 군집 중심점과 평균 거리
+
+val kmpredicts = kmmodel.transform(penlpoints)
+printContingency(kmpredicts, 0 to 9) // 실제 레이블과 예측된 레이블이 튜플로 구성된 RDD, 실제 레이블 값의 배열 전달
+// 군집 결과의 분할표와 순도 출력
+```
+
+#### 8.4.1.3 군집 개수 결정
+숫자 데이터는 군집 개수를 정확하게 결정할 수 있었지만 실제로 군집화 작업을 수행할 때는 군집 개수를 몇 개로 설정할지 고민해야 한다. 이럴 때 엘보 기법(elbow method)을 활용할 수 있다.
+
+엘보 기법은 군집 개수를 조금씩 늘려가며 모델을 훈련시키고, 각 모델의 군집 비용을 게산한다. 군집 개수와 군집 비용을 그래프로 그려보고 기울기가 급격하게 변하는 엘보 지점들을 군집 개수의 후보로 선정한다.
