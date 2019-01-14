@@ -135,9 +135,11 @@ ssc.stop(false)
 #### 6.1.6.3 출력 결과
 `saveAsTextFiles` 메서드에 의해 미니배치 별로 생성된 디렉터리에 존재하는 파일
 * *part-00000*: 집계 결과
-  * 예시  
-  (false,9969)  
+  * 예시
+  ```text
+  (false,9969)
   (true, 10031)
+  ```
 * *_SUCCESS*: 폴더의 쓰기 작업을 성공적으로 완료했음을 표시
 
 여러 디렉터리에 분할 저장되어 있지만, 스파크 API를 사용하면 여러 디렉터리의 파일을 간편하게 읽을 수 있다.
@@ -210,10 +212,12 @@ sc.setCheckpointDir("/home/spark/checkpoint")
 #### 6.1.7.4 두 번째 출력 결과
 스트리밍 컨텍스트를 시작 `ssc.start()`하고 `rm -f /home/spark/ch06input/` 명령으로 입력 폴더를 리셋한 후, *splitAndSend.sh* 스크립트를 재실행하면 아래와 같은 파일이 생성된다.
 
-*part-00000*의 예  
-(SELLS,List(4926))  
-(BUYS,List(5074))  
+*part-00000*의 예
+```text
+(SELLS,List(4926))
+(BUYS,List(5074))
 (TOP5CLIENTS,List(34, 69, 92, 36, 64))
+```
 
 #### 6.1.7.5 `mapWithState`
 `mapWithState`는 `updateStateByKey`의 기능 및 성능을 개선한 메서드로 스파크 버전 1.6부터 사용할 수 있다. 그리고 차이점으로 `mapWithState`는 *상태 값의 타입과 반환 값의 타입을 다르게 적용*할 수 있다.
@@ -278,11 +282,13 @@ val topStocks = stocksPerWindow.transform(_.sortBy(_._2, false).map(_._1).
 val finalStream = buySellList.union(top5clList).union(topStocks)
 ```
 
-*part-00000*의 예  
-(SELLS,List(9969))  
-(BUYS,List(10031))  
-(TOP5CLIENTS,List(15, 64, 55, 69, 19))  
+*part-00000*의 예
+```text
+(SELLS,List(9969))
+(BUYS,List(10031))
+(TOP5CLIENTS,List(15, 64, 55, 69, 19))
 (TOP5STOCKS,List(AMD, INTC, BP, EGO, NEM))
+```
 
 #### 6.1.8.2 그 외 다른 윈도 연산자
 이 중 일부는 일반 `DStream`에서도 사용할 수 있으며, `ByKey`가 포함된 함수들은 `Pair DStream`에서만 사용할 수 있다.
@@ -313,3 +319,256 @@ TCP/IP 소켓에서 바로 데이터 수신. 다만 소켓 스트림의 리시�
 `StorageLevel`을 선택 인자로 지정할 수 있는데, 이는 데이터가 보관될 위치와 데이터 복제 여부를 결정한다.
 * `socketTextStream`: 각 요소가 UTF-8로 인코딩한 문자열 줄로 구성된 `DStream` 반환
 * `socketStream`: 이진 데이터를 읽는 자바 `InputStream` 객체를 결과 `DStream`의 요소가 될 객체로 변환하는 변환 함수를 전달해야 함.
+
+## 6.2 외부 데이터 소스 사용
+스파크가 공식적으로 커넥터를 지원하는 외부 시스템 및 프로토콜
+* [카프카](https://kafka.apache.org)
+* [플럼](https://flume.apache.org)
+* [아마존 Kinesis](https://aws.amazon.com/en/kinesis)
+* [트위터](https://dev.twitter.com/overview/documentation)
+* [ZeroMQ](http://zeromq.org)
+* [MQTT](http://mqtt.org)
+
+### 6.2.1 카프카 시작
+카프카는 *분산 발행-구독(publish-subscribe) 메시징 시스템*이며, 스파크와 호환되는 버전을 선택해야 한다. 또한 카프카는 [아파치 주키퍼](https://zookeeper.apache.org/)를 사용하므로 *카프카를 시작하기 전에 주키퍼를 시작*해야 한다.
+
+> 주키퍼는 분산 프로세스를 안정적으로 조율할 수 있는 오픈소스 서버 소프트웨어
+
+```bash
+cd /usr/local/kafka
+# zookeeper가 2181 포트로 시작해 백그라운드에서 동작
+bin/zookeeper-server-start.sh config/zookeeper.properties &
+# start kafka
+bin/kafka-server-start.sh config/server.properties &
+
+# create topic [orders]
+bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic orders
+# create topic [metrics]
+bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic metrics
+# check topic list
+bin/kafka-topics.sh --list --zookeeper localhost:2181
+```
+
+### 6.2.2 카프카를 사용해 스트리밍 애플리케이션 개발
+스파크 셸에서 카프카를 사용하려면 카프카 라이브러리와 스파크-카프카 커넥터 라이브러리를 스파크 셸의 클래스패스에 추가해 시작해야 한다. 스파크 셸을 시작할 때 packages 옵션을 지정하면 자동으로 라이브러리를 포함한다. 독립 애플리케이션을 작성할 경우, 아래 groupID와 artifactID 그리고 버전 정보를 참조해 pom.xml에 dependency 추가하면 된다.
+
+```bash
+spark-shell --master local[4] --packages org.apache.spark:spark-streaming-kafka-0-8_2.11:2.0.0,org.apache.kafka:kafka_2.11:0.8.2.1
+```
+
+#### 6.2.2.1 스파크-카프카 커넥터 사용
+* 리시버 기반 커넥터: 간혼 메시지 한 개를 여러 번 읽기도 함. 데이터 유실을 방지하기 위해 *로그 선행 기입 기법*을 사용하는데, 그만큼 연산 성능이 다소 뒤떨어짐. 마지막으로 가져온 메시지의 오프셋을 주키퍼에 저장.
+* 다이렉트 커넥터: 최신. 입력된 메시지를 정확히 한 번 처리. 오프셋을 주키퍼 대신 스파크 체크포인팅 디렉터리에 저장.
+
+카프카 설정에 필요한 매개변수들을 `Map` 객체로 구성해야 하는데, 여기엔 카프카 브로커 주소를 가리키는 `metadata.broker.list`가 반드시 있어야 한다. 혹은 `bootstrap.servers` 매개변수를 사용할 수 있다.
+
+그리고 `Map`에 넣은 *카프카 설정과 스트리밍 컨텍스트 객체, 카프카 토픽 이름을 담은 `Set` 객체*를 *메시지의 키 클래스, 값 클래스, 키 디코더 클래스, 값 디코더 클래스*를 지정해 `createDirectStream` 메서드에 전달하면 된다.
+
+```scala
+val kafkaReceiverParams = Map[String, String]("metadata.broker.list" -> "192.168.10.2:9092") // 카프카 기본 포트: 9092
+
+// 카프카 토픽의 데이터를 읽어 DStream 생성
+// 예제에서는 키와 값이 String이므로 해당 클래스 지정
+import org.apache.spark.streaming.kafka.KafkaUtils
+val kafkaStream = KafkaUtils.createDirectStream[String, String, StringDecoder, StringDecoder](ssc, kafkaReceiverParams, Set("orders"))
+```
+
+#### 6.2.2.2 카프카로 메시지 전송
+`DStream`의 `foreachRDD` 메서드를 이용해 스파크 스트리밍에서 카프카로 메시지를 전송할 수 있다. 이 메서드는 *임의의 함수를 `DStream`의 각 RDD별로 실행*한다.
+
+***`foreachRDD` 메서드 시그니처***
+```scala
+def foreachRDD(foreachFunc: RDD[T] => Unit): Unit
+def foreachRDD(foreachFunc: (RDD[T], Time) => Unit): Unit // RDD 데이터가 유입된 시간 정보를 사용할 수 있음
+```
+
+`Producer` 객체로 카프카에 메시지를 전송할 수 있다. `Producer`는 카프카 커넥션을 생성하며 브로커에 접속해 `KeyedMessage` 객체의 형태로 구성한 메시지를 토픽으로 전송한다. 하지만, `Producer`객체는 직렬화/역직렬화할 수 없으므로 반드시 *스파크 실행자에서 구동될 코드에 구현*해야 한다.
+
+RDD 파티션 별로 producer 객체 생성해서 사용
+```scala
+import kafka.producer.Producer
+import kafka.producer.KeyedMessage
+import kafka.producer.ProducerConfig
+finalStream.foreachRDD((rdd) => {
+    val prop = new java.util.Properties
+    prop.put("metadata.broker.list", "192.168.10.2:9092")
+    rdd.foreachPartition((iter) => {
+        val p = new Producer[Array[Byte], Array[Byte]](new ProducerConfig(prop))
+        iter.foreach(x => p.send(new KeyedMessage("metrics", x.toString.toCharArray.map(_.toByte))))
+        p.close()
+    })
+})
+```
+
+싱글톤 객체를 생성해 JVM별로 Producer 객체를 하나씩만 초기화하는 방법
+```scala
+import kafka.producer.Producer
+import kafka.producer.KeyedMessage
+import kafka.producer.ProducerConfig
+case class KafkaProducerWrapper(brokerList: String) {
+    val producerProps = {
+        val prop = new java.util.Properties
+        prop.put("metadata.broker.list", brokerList)
+        prop
+    }
+
+    val p = new Producer[Array[Byte], Array[Byte]](new ProducerConfig(producerProps))
+
+    def send(topic: String, key: String, value: String) {
+        p.send(new KeyedMessage(topic, key.toCharArray.map(_.toByte), value.toCharArray.map(_.toByte)))
+    }
+}
+
+object KafkaProducerWrapper {
+    var brokerList = ""
+    lazy val instance = new KafkaProducerWrapper(brokerList)
+}
+```
+
+이 파일을 jar로 묶어 `--jars` 매개변수를 사용해 스파크 셸의 클래스패스에 추가할 수 있다. 이 파일까지 추가해 스파크 셸을 시작하자.
+
+```bash
+spark-shell --master local[4] --packages org.apache.spark:spark-streaming-kafka-0-8_2.11:2.0.0,org.apache.kafka:kafka_2.11:0.8.2.1 --jars first-edition/ch06/kafkaProducerWrapper.jar
+```
+
+파이썬의 경우
+```bash
+sudo pip install kafka-python
+pyspark --master local[4] --packages org.apache.spark:spark-streaming-kafka_2.10:1.6.1
+```
+
+예제 실행
+```bash
+chmod +x streamOrders.sh
+./streamOrders.sh 192.168.10.2:9092 # 데이터 전송 시작
+# 스트리밍 결과 확인
+kafka-console-consumer.sh --zookeeper localhost:2181 --topic metrics
+```
+
+## 6.3 스파크 스트리밍의 잡 성능
+일반적으로 스트리밍 애플리케이션에 요구되는 것
+* 낮은 지연 시간(입력 레코드를 최대한 빨리 처리)
+* 확장성(데이터의 유량 증가에 뒤처지지 않음)
+* 장애 내성(일부 노드에 장애가 발생해도 계속 데이터 처리)
+
+### 6.3.1 성능 개선
+스파크 스트리밍은 웹 UI에서 아래 네 가지 지표를 제공한다. 총 지연 시간은 미니배치 주기와 비슷해야겠지?
+
+* Input Rate(유입 속도): 초당 유입된 레코드 개수
+* Scheduling Delay(스케줄링 지연 시간): 새로운 미니배치의 잡을 스케줄링할 때까지 걸린 시간
+* Processing Time(처리 시간): 각 미니배치 잡을 처리하는 데 걸린 시간
+* Total Delay(총 지연 시간): 각 미니배치를 처리하는 데 소요된 총 시간
+
+#### 6.3.1.1 처리 시간 단축
+1. 일단 프로그램을 최적화. 셔플링을 최대한 피하고, 파티션 내에서 커넥션을 재사용하고, 커넥션 풀링 등의 기법을 사용하자.
+2. 미니배치 주기를 적당히 늘릴 수도 있음.
+3. 클러스터 리소스를 추가할 수도 있음.
+
+#### 6.3.1.2 병렬화 확대
+* 입력 데이터 소스 병렬화
+* `DStream`을 명시적으로 리파티셔닝
+
+#### 6.3.1.3 유입 속도 제한
+마지막 처방은 *데이터가 유입되는 속도를 제한*하는 것. 아래 매개변수를 조정해 데이터 유입 속도를 제한할 수 있음
+* `spark.streaming.receiver.maxRate`: 리시버 기반 커넥터에 사용. 각 리시버 기반 입력 스트림에 유입되는 레코드 개수를 제한
+* `spark.streaming.kafka.maxRatePerPartition`: 카프카 다이렉트 커넥터에 사용. 각 카프카 파티션에서 가져올 레코드 개수를 제한
+
+혹은 `spark.streaming.backpressure.enabled` 매개변수를 `true`로 설정해 스케줄링이 지연되기 시작하면 애플리케이션이 받을 수 있는 최대 메시지 개수를 자동으로 조절하게 할 수 있다.
+
+### 6.3.2 장애 내성
+#### 6.3.2.1 실행자의 장애 복구
+데이터가 실행자의 리시버로 유입되면 스파크는 데이터를 *클러스터에 중복 저장*한다. 따라서 장애가 발생해도 데이터를 복구할 수 있다.
+
+#### 6.3.2.2 드라이버의 장애 복구
+드라이버 프로세스가 실패하면 실행자 연결이 끊어지므로 애플리케이션 자체를 재시작해야 한다. 재시작하면 스파크 스트리밍은 *체크포인트에 저장된 스트리밍 컨텍스트의 상태를 읽어 마지막 상태를 복구*한다. 만약 체크포인트가 없으면 전달된 스트리밍 컨텍스트 초기화 함수를 호출한다.
+
+```scala
+def setupStreamContext(): StreamingContext {
+    val ssc = new StreamingContext(sc, Seconds(5))
+    val kafkaReceiverParams = Map[String, String]("metadata.broker.list" -> "192.168.10.2:9092")
+
+    // DStream 연산 수행
+
+    ssc.checkpoint("checkpoint_dir") // 지정된 디렉터리에 스트림 상태를 주기적으로 저장
+    ssc
+}
+
+val ssc = StreamingContext("checkpoint_dir", setupStreamContext)
+ssc.start()
+```
+
+스파크 스트리밍의 리시버들은 유입된 데이터를 처리하기 전에 선행 기입 로그(write-ahead log)에 데이터를 저장한 후, 데이터를 잘 받았다는 확인 메시지를 입력 데이터 소스에 전달(입력 데이터 소스가 확인 메시지를 받는 경우에만)한다. 따라서 리시버를 재시작하면 아직 처리하지 못한 데이터를 선행 기입 로그에서 가져와 처리하므로 데이터 유실이 발생하지 않는다.
+
+`spark.streaming.receiver.writeAheadLog.enable`을 `true`로 세팅해야 한다.
+
+## 6.4 정형 스트리밍
+스파크 2.0에서 도입된 스트리밍 API로 스트리밍 연산의 장애 내성과 일관성을 갖추는 데 필요한 세부 사항을 숨겨서 *스트리밍 API를 마치 일괄 처리 API처럼 사용*할 수 있게 하는 것이다.
+
+정형 스트리밍 연산은 `DataFrame`에 직접 실행된다. 따라서 스트림 개념은 없어지고, *스트리밍 `DataFrame`* 과 *일반 `DataFrame`* 으로 구분한다. 스트리밍 `DataFrame`은 *append-only* 테이블로 스트리밍 데이터에 질의를 실행하면 새로운 `DataFrame`이 반환되며, 그 후로는 *일괄 처리 프로그램과 동일*하게 `DataFrame`을 사용할 수 있다.
+
+### 6.4.1 스트리밍 DataFrame 생성
+스트리밍 `DataFrame`은 `read` 대신 `readStream` 호출해 생성하며, `readStream`은 `DataFrameReader`와 거의 비슷한 메서드를 제공하는 `DataStreamReader` 반환
+
+```scala
+import spark.implicits._
+val structStream = spark.readStream.text("ch06input") // org.apache.spark.sql.DataFrame = [value: string]
+structStream.isStreaming // true
+structStream.explain() // 실행 계획 확인
+```
+
+### 6.4.2 스트리밍 데이터 출력
+스트리밍 `DataFrame`을 활용해 스트리밍 연산을 시작하면 `writeStream` 메서드를 사용해야 한다. 이 메서드는 `DataStreamWriter` 클래스의 인스턴스를 반환한다.
+
+*빌더 패턴*을 사용해 아래 설정들을 지정해 `DataStreamWriter`를 세팅할 수 있다.
+* `trigger`: 스트리밍 연산 수행 시간 주기 설정. `ProcessingTime.create("5 seconds")`
+* `format`: 출력 포맷 지정. *parquet*, *console*, *memory*만 지원(2.0 기준). `memory`로 지정한 경우 메모리에 테이블 형태로 유지하며, *이 데이터에 대화형 쿼리를 실행*할 수 있다.
+* `outputMode`: 출력 모드 지정.
+* `option`: 기타 특정 인자 지정.
+* `foreach`: 개별 `DataFrame`의 계산을 수행하는 데 사용.
+* `queryName`: *memory* 포맷을 사용할 때 테이블 이름 지정.
+---
+스파크 2.0에서 지원하는 출력 모드
+* `append`: 마지막 처리 결과를 출력한 이후에 유입된 데이터만 출력
+* `complete`: 매번 전체 데이터 출력. 집계 연산에만 사용 가능
+
+```scala
+import org.apache.spark.sql.streaming.ProcessingTime
+val streamHandle = structStream.
+    writeStream.
+    format("console").
+    trigger(ProcessingTime.create("5 seconds")).
+    start()
+```
+
+### 6.4.3 스트리밍 실행 관리
+`start` 메서드는 스트리밍 실행의 핸들과도 같은 역할을 하는 `StreamingQuery` 객체 반환
+
+`StreamingQuery`의 메서드로 스트리밍 실행 관리
+* `isActive`: 스트리밍 실행 상태 확인
+* `stop`: 스트리밍 실행 종료
+* `awaitTermination`: 스트리밍 실행이 종료될 때까지 애플리케이션을 종료하지 않도록 지정
+* `exception`: 예외 발생 시 예외 정보를 얻을 수 있음
+* `id`: 실행 ID
+
+
+`SparkSession.stream`로 여러 스트리밍 실행 상황 관리
+* `SparkSession.streams`: 반환되는 `StreamingQueryManager` 클래스로 *여러 스트리밍의 실행 상황 질의 가능*
+* `SparkSession.streams.active`: 현재 활성화된 `StreamingQuery` 객체의 배열 반환
+* `SparkSession.streams.get(id)`: 특정 ID의 `StreamingQuery` 객체 반환
+* `SparkSession.streams.awaitAnyTermination`: 실행 중인 여러 쿼리 중 어느 하나가 종료될 때까지 애플리케이션을 종료하지 않도록 지정
+
+### 6.4.4 정형 스트리밍의 미래
+정형 스트리밍으로 *일괄 데이터와 스트리밍 데이터를 결합*하고, *일괄 처리 연산과 스트리밍 연산을 통합*할 수 있다. 또 텅스텐 엔진을 활용해 스트리밍의 계산 성능을 개선할 수 있다.
+
+
+
+
+
+
+
+
+
+
+
+
+
