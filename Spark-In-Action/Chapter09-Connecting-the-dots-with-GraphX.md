@@ -1,6 +1,6 @@
 # 9장 점을 연결하는 GraphX
 
-> 스파크의 그래프 처리 API  
+스파크의 그래프 처리 API
 
 이번 장에선 최단 경로, 페이지 랭크, 연결 요소 및 강연결 요소 등의 알고리즘과 스파크에서 그래프 알고리즘을 사용하는 예제를 소개한다. 스칼라에서만 제공하며, 파이썬이나 자바에서는 GraphX API를 사용할 수 없다.
 
@@ -220,4 +220,323 @@ parents.vertices.collect.foreach(println)
 */
 parents.edges.collect.foreach(println)
 // Edge(1,2,Relationship(marriedTo))
+```
+
+## 9.2 그래프 알고리즘
+사실 GraphX는 그래프 데이터 처리에 특화된 알고리즘을 사용하기 위해 개발되었다. 여기서 소개할 스파크의 그래프 알고리즘은 다음과 같다.
+
+* 최단 거리: 한 정점에서 다른 정점들로 향하는 최단 경로 탐색
+* 페이지 랭크: 정점으로 들어오고 나가는 간선 개수를 바탕으로 정점의 상대적 중요도 계산
+* 연결요소: 그래프에서 서로 완전히 분리된 서브 그래프 추출
+* 강연결요소: 그래프에서 서로 연결된 정점들의 군집 추출
+
+### 9.2.1 예제 데이터셋
+스탠퍼드 대학교가 공개한 위키스피디아 데이터셋 중 일부 사용
+
+* articles.tsv: 문서의 고유한 이름이 한 줄에 하나씩 존재
+* links.tsv: 각 웹 링크별 출발 문서와 도착 문서의 이름이 탭(\t) 문자로 구분되어 있음
+
+```scala
+val articles = sc.textFile("first-edition/ch09/articles.tsv").
+    filter(line => line.trim() != "" && !line.startsWith("#")).
+    zipWithIndex().cache()
+
+val links = sc.textFile("first-edition/ch09/links.tsv").
+    filter(line => line.trim() != "" && !line.startsWith("#"))
+
+val linkIndexes = links.map(x => {
+        val spl = x.split("\t")
+        (spl(0), spl(1)) // source, destination
+    }).join(articles).map(x => x._2).join(articles).map(x => x._2)
+// (출발 문서 ID, 도착 문서 ID)
+
+import org.apache.spark.graphx._
+val wikigraph = Graph.fromEdgeTuples(linkIndexes, 0) // Graph 준비 완료
+```
+
+하지만 여기서 `wikigraph.vertices.count()`와 `articles.count()`를 해보면 두 값이 다르다. 이는 링크 파일에 일부 분서가 누락되었기 때문인데, `linkIndexes`에서 유니크한 문서 ID개수를 세어 보면 `wikigraph.vertices.count()`와 동일한 것을 확인할 수 있다.
+
+```scala
+linkIndexes.map(x => x._1).union(linkIndexes.map(x => x._2)).distinct().count()
+```
+
+### 9.2.2 최단 경로 알고리즘 (Shortest path)
+특정 정점에서 그래프의 각 정점으로 도달하기 위해 따라가야 할 *간선의 최소 개수*를 찾는 알고리즘
+
+스파크에서는 `ShortestPaths` 객체를 통해 최단경로 알고리즘을 사용할 수 있다. `ShortestPaths`는 유일한 `run` 메서드를 가지는데, 이 메서드는 *그래프 객체와 정점 ID의 `Seq` 객체를 인수*로 받는다. 그리고 메서드는 각각의 정점에서 인수로 받은 정점 ID로 가는 최단 경로를 `Map` 형태로 정점 속성에 저장한 그래프를 반환한다.
+
+Rainbow(id: 3425)문서에서 14th_century(id: 10)문서로 가는 최단 경로
+
+```scala
+import org.apache.spark.graphx.lib._
+val shortest = ShortestPaths.run(wikigraph, Seq(10)) // 14th_century ID 전달
+
+shortest.vertices.filter(x => x._1 == 3425).collect.foreach(println)
+// (3425,Map(10 -> 2)) -> 10번 정점으로 가는 데 최단 거리가 2
+```
+
+### 9.2.3 페이지랭크 (Page Rank, PR)
+그래프 내 각 정점의 중요도를 해당 정점에 도착하는 간선 개수를 기반으로 계산하는 알고리즘
+
+1. 각 정점의 페이지랭크 값을 1로 초기화
+2. 각 정점의 페이지랭크 값을 이 정점에서 나가는 간선 개수로 나눔
+3. 나눈 결과를 인접 정점의 페이지랭크 값에 더함
+4. 모든 페이지랭크 값의 변동폭이 수렴 허용치 값보다 작을 때까지 반복
+
+`Graph`의 `pageRank` 메서드를 수렴 허용치 매개변수와 함께 호출해 페이지랭크 알고리즘을 실행할 수 있다.
+
+```scala
+val ranked = wikigraph.pageRank(0.001)
+
+// 가장 중요한 페이지 열 개
+val ordering = new Ordering[Tuple2[VertexId, Double]] {
+    def compare(x: Tuple2[VertexId, Double], y: Tuple2[VertexId, Double]): Int = x._2.compareTo(y._2)}
+
+val top10 = ranked.vertices.top(10)(ordering) // 정점ID와 PR값 리턴
+
+sc.parallelize(top10).join(articles.map(_.swap)).collect.sortWith((x, y) => x._2._1 > y._2._1).foreach(println)
+```
+
+### 9.2.4 연결요소 (Connected components)
+모든 정점에서 다른 모든 정점으로 도달할 수 있도록 연결된 서브그래프, 그래프의 모든 정점이 다른 모든 정점으로 도달할 수 있을 때는 연결 그래프(connected graph)라고 함
+
+`Graph`의 `connectedComponents` 메서드(`GraphOps`의 암시적 제공)를 호출해 연결 요소를 찾을 수 있다. 각 정점에는 연결 요소 내 가장 작은 정점 ID가 속성으로 저장된다.
+
+```scala
+val wikiCC = wikigraph.connectedComponents()
+
+wikiCC.vertices.map(x => (x._2, x._2)).distinct().join(articles.map(_.swap)).collect.foreach(println)
+// (0,(0,%C3%81ed%C3%A1n_mac_Gabr%C3%A1in))
+// (1210,(1210,Directdebit))
+// wiki graph는 두 군집으로 분리되어 있음을 확인할 수 있음
+
+wikiCC.vertices.map(x => (x._2, x._2)).countByKey().foreach(println)
+// (0,4589) 0번과 연결요소 페이지 4589개
+// (1210,3) 1210번과 연결요소 페이지 3개
+```
+
+### 9.2.5 강연결요소 (Strongly Connected Componsts, SCC)
+모든 정점이 다른 정점과 연결된 서브그래프로 이 그래프 내에 속한 모든 정점은 간선 방향을 따라 *서로 도달*할 수 있어야 함. 연결요소는 완전히 분리된 서브 그래프라면 SCC는 일부 정점을 통해 서로 연결될 수 있음
+
+`Graph`의 `stronglyConnectedComponents` 메서드(`GraphOps`의 암시적 제공)를 최대 반복 횟수와 함께 호출해 강연결요소를 찾을 수 있다.
+
+```scala
+val wikiSCC = wikigraph.stronglyConnectedComponents(100)
+
+wikiSCC.vertices.map(x => x._2).distinct.count // 519 개의 SCC
+
+wikiSCC.vertices.map(x => (x._2, x._1)).countByKey().filter(_._2 > 1).toList.sortWith((x, y) => x._2 > y._2).foreach(println)
+// (6,4051) -> 6번과 강연결요소가 4051개
+// (2488,6)
+// (1831,3)
+// (892,2)
+```
+
+## 9.3 A* 검색 알고리즘 구현
+두 정점 사이의 최단 경로를 효율적으로 찾을 수 있는 알고리즘
+
+### 9.3.1 A* 알고리즘 이해
+시작 정점과 종료 정점을 받고, 각 정점별로 시작 정점과 종료 정점으로 이동하는 데 필요한 상대적인 비용을 계산한 후, *가장 낮은 비용을 기록한 정점들로 구성된 경로*를 선택.
+
+지나온 거리와 목적지까지 남은 거리를 *가늠*해 합한 값으로 비용을 계산한다. 직선 거리로 계산할 수도 있지만, 다른 함수를 사용해 추정할 수도 있다. 다만 A* 알고리즘의 핵심은 *종료 정점까지 남은 거리를 추정*하는 함수이므로, 정점 간의 거리를 예상할 수 없는 그래프에서는 A* 알고리즘을 사용할 수 없다.
+
+> F(비용) = G(지나온 경로 길이) + H(종료 정점과의 추정 거리)
+
+1. 현재 정점의 인접 미방문 정점 비용 계산 (이미 계산되어 있는 경우 값을 비교해 더 작은 값 채택)
+2. 비용이 계산된 정점 중 가장 작은 비용의 정점을 기방문 그룹에 넣고 다음 반복 차수의 정점(다음 차수의 현재 정점)으로 선택
+3. 종료 정점에 도달할 때까지 반복
+4. 종료 정점에 도달하면 가장 작은 비용값을 *역으로* 따라가면서 시작 정점에 이르는 경로 구성
+
+### 9.3.2 A* 알고리즘 구현
+[A* 알고리즘 구현 코드](https://github.com/spark-in-action/first-edition/blob/master/ch09/scala/ch09-listings.scala)
+
+#### 9.3.2.1 알고리즘 초기화
+예제 코드는 `AStart` 객체의 `run` 메서드를 호출해 실행
+
+`run` 메서드가 받는 인수
+* `graph`: A* 알고리즘을 실행할 그래프
+* `origin`: 시작 정점 ID
+* `dest`: 종료 정점 ID
+* `maxIterations`: 알고리즘 최대 반복 횟수
+* `estimateDistance`: 두 정점의 속성 객체를 받고 둘 사이의 거리를 추정하는 함수
+* `edgeWeight`: 속성 객체를 받고 간선의 가중치를 반환하는 함수
+* `shouldVisitSource`: 간선의 속성 객체를 인수로 받고 간선의 출발 정점을 방문할지 여부를 지정하는 함수
+* `shouldVisitDestination`: 간선의 속성 객체를 인수로 받아 간선의 도착 정점을 방문할지 여부를 지정하는 함수
+
+```scala
+val arr = graph.vertices.flatMap(n =>
+    if (n._1 == origin || n._1 == dest)
+        List[Tuple2[VertexId, VD]](n)
+    else
+        List()).collect()
+
+if (arr.length != 2)
+    throw new IllegalArgumentException("Origin or destination not found")
+
+val origNode = if (arr(0)._1 == origin) arr(0)._2 else arr(1)._2
+val destNode = if (arr(0)._1 == origin) arr(1)._2 else arr(2)._2
+
+val dist = estimateDistance(origNode, destNode)
+
+// 작업 그래프의 정점 속성 객체로 사용할 WorkNode 클래스
+case class WorkNode(origNode: VD,
+                    g: Double=Double.MaxValue,
+                    h: Double=Double.MaxValue,
+                    f: Double=Double.MaxValue,
+                    visited: Boolean=false,
+                    predec: Option[VertexId]=None)
+
+// 원본 그래프의 정점을 WorkNode로 매핑해 gwork(작업그래프)를 생성
+var gwork = graph.mapVertices{ case(ind, node) => {
+    if (ind == origin)
+        WorkNode(node, 0, dist, dist) // 출발지 정점의 F, G, H값 설정
+    else
+        WorkNode(node)
+}}.cache()
+
+// 시작 정점을 현재 정점으로 설정
+var currVertexId: Option[VertexId] = Some(origin)
+```
+
+#### 9.3.2.2 메인 루프 구현
+```scala
+for (iter <- 0 to maxIterations
+    if currVertexId.isDefined; // 종료 정점에 도달하지 못했는데 미방문 그룹에 정점이 없을 때 currVertexId에 None 할당
+    if currVertexId.getOrElse(Long.MaxValue) != dest) // 종료 정점에 도달하면 currVertexId에 종료 정점 ID 할당
+
+// 1. 현재 정점을 방문 완료로 변경
+// 2. 현재 정점과 인접한 이웃 정점들의 F, G, H값 계산
+// 3. 미방문 그룹에서 다음 반복 차수의 현재 정점 선정
+```
+
+> Graph의 cache 메서드를 사용해 정점과 간선을 캐싱할 수 있음
+
+#### 9.3.2.3 현재 정점을 방문 완료로 변경
+```scala
+gwork = gwork.mapVertices((vid: VertexId, v: WorkNode) => {
+    if (vid != currVertexId.get)
+        v
+    else
+        WorkNode(v.origNode, v.g, v.h, v.f, true, v.predec) // 현재 정점의 visited 속성만 true로 변경
+}).cache()
+```
+
+#### 9.3.2.4 작업그래프의 체크포인트 저장
+체크포인팅을 하지 않으면 메인 루프를 반복할수록 DAG가 계속 늘어나서 연산량이 증가(스택오버플로 오류 발생 가능)하기 때문에 체크 포인트를 저장하자.
+
+```scala
+if (iter & checkpointFrequency == 0)
+    gwork.checkpoint()
+```
+
+#### 9.3.2.5 이웃 정점의 비용 계산
+```scala
+// 현재 정점과 연결된 간선만 선택해 서브그래프 생성
+val neighbors = gwork.subgraph(trip => trip.srcId == currVertexId.get || trip.dstId == currVertexId.get)
+
+// 서브그래프의 정점 중 방문하지 않았으면서 shouldVisitSource or souldVisitDestination이 true인 정점에 메시지 전송
+// 현재 정점의 G에 현재 정점부터 대상 정점까지의 가중치 값을 더해 새로운 G 계산해서 전송
+val newGs = neighbors.aggregateMessages[Double](ctx => {
+    if (ctx.srcId == currVertexId.get && !ctx.dstAttr.visited && shouldVisitDestination(ctx.attr)) {
+        ctx.sendToDst(ctx.srcAttr.g + edgeWeight(ctx.attr))
+    } else if (ctx.dstId == currVertexId.get && !ctx.srcAttr.visited && shouldVisitSource(ctx.attr)) {
+        ctx.sendToSrc(ctx.dstAttr.g + edgeWeight(ctx.attr))
+    }}, (a1: Double, a2: Double) => a1, TripletFields.All)
+// 새 G 값을 전달받은 정점들로만 구성됨 VertexRDD
+
+// newGs를 작업 그래프와 join
+// 새로운 F 값이 기존 F 값보다 작을 때 predec 필드에 현재 정점 ID를 설정하고 정점의 속성 객체 변경
+val cid = currVertexId.get
+gwork = gwork.outerJoinVertices(newGs)((nid, node, totalG) =>
+    totalG match {
+        case None => node
+        case Some(newG) => {
+            if (node.h == Double.MaxValue) {
+                val h = estimateDistance(node.origNode, destNode)
+                WorkNode(node.origNode, newG, h, newG + h, false, Some(cid))
+            } else if (node.h + newG < node.f) {
+                WorkNode(node.origNode, newG, node.h, newG + node.h, false, Some(cid))
+            } else
+                None
+        }
+    }
+)
+```
+
+#### 9.3.2.6 다음 반복 차수의 현재 정점 선정
+```scala
+// 미방문 그룹에 속한 계산된 H값을 가진 정점
+val openList = gwork.vertices.filter(v => v._2.h < Double.MaxValue && !v._2.visited)
+
+if (openList.isEmpty)
+    currVertexId = None // 목적지 도달 불가
+else {
+    val nextV = openList.map(v => (v._1, v._2.f)).
+        reduce((n1, n2) => if (n1._2 < n2._2) n1 else n2)
+    currVertexId = Some(nextV._1)
+}
+```
+
+#### 9.3.2.7 최종 경로 구성
+```scala
+// 종료 정점 ID와 `currVertexId` 값이 동일하다면 경로를 찾은 것
+if (currVertexId.isDefined && currVertexId.get == dest) {
+    println("Found!")
+
+    // 종료 정점에서부터 각 정점의 predec 필드를 따라 시작 정점까지 되돌아가면서 최종 경로 구성
+    var currId: Option[VertexId] = Some(dest)
+    var it = lastIter
+    while (currId.isDefined && is >= 0) {
+        val v = gwork.vertices.filter(x => x._1 == currId.get).collect()(0)
+        resbuf += v._2.origNode
+        currId = v._2.predec
+        it = it -1
+    }
+}
+
+resbuf.toArray.reverse // 최단 경로
+```
+
+### 9.3.3 구현된 알고리즘 테스트
+3차원 공간의 점을 연결한 그래프로 각 정점 속성에 X, Y, Z 좌표를 가짐
+
+```scala
+case class Point(x:Double, y:Double, z:Double)
+
+// 예제 그래프 생성
+import org.apache.spark.graphx._
+val vertices3d = sc.parallelize(Array((1L, Point(1,2,4)),
+    (2L, Point(6,4,4)), (3L, Point(8,5,1)),
+    (4L, Point(2,2,2)), (5L, Point(2,5,8)),
+    (6L, Point(3,7,4)), (7L, Point(7,9,1)),
+    (8L, Point(7,1,2)), (9L, Point(8,8,10)),
+    (10L, Point(10,10,2)), (11L, Point(8,4,3))))
+
+val edges3d = sc.parallelize(Array(Edge(1, 2, 1.0), Edge(2, 3, 1.0),
+    Edge(3, 4, 1.0), Edge(4, 1, 1.0),
+    Edge(1, 5, 1.0), Edge(4, 5, 1.0),
+    Edge(2, 8, 1.0), Edge(4, 6, 1.0),
+    Edge(5, 6, 1.0), Edge(6, 7, 1.0),
+    Edge(7, 2, 1.0), Edge(2, 9, 1.0),
+    Edge(7, 9, 1.0), Edge(7, 10, 1.0),
+    Edge(10, 11, 1.0), Edge(9, 11, 1.0)))
+
+val graph3d = Graph(vertices3d, edges3d)
+
+// 3차원 좌표에서 거리 계산
+val calcDistance3d = (p1: Point, p2: Point) => {
+    val x = p1.x - p2.x
+    val y = p1.y - p2.y
+    val z = p1.z - p2.z
+    Math.sqrt(x * x + y * y + z * z)
+}
+
+// 그래프의 간선 매핑
+val graph3dDst = graph3d.mapTriplets(t => calcDistance3d(t.srcAttr, t.dstAttr))
+
+// checkpoint 디렉터리 지정
+sc.setCheckpointDir("/home/spark/ch09checkpoint")
+
+// 1번 정점에서 10번 정점으로 가는 최단 경로
+AStar.run(graph3dDst, 1, 10, 50, calcDistance3d, (e: Double) => e)
 ```
