@@ -7,7 +7,7 @@
 * [Chapter 5: 형식 맞추기](Chapter05-Formatting.md)
 * [Chapter 6: 객체와 자료 구조](Chapter06-Objects-and-data-structures.md)
 * [Chapter 7: 오류 처리](Chapter07-Error-handling.md)
-* Chapter 8: 경계
+* [Chapter 8: 경계](Chapter08-Boundaries.md)
 * Chapter 9: 단위 테스트
 * Chapter 10: 클래스
 * Chapter 11: 시스템
