@@ -20,7 +20,7 @@ Eclipse에서 메이븐 프로젝트 생성
 
 > File &gt; New &gt; Project &gt; Maven &gt; Maven Project
 
-_Configure_에서 _Add Remote Catalog_를 클릭해 다음 내용 입력  
+_Configure_ 에서 _Add Remote Catalog_ 를 클릭해 다음 내용 입력  
 \(깃허브 저장소에 있는 스파크 버전과 모든 의존 라이브러리가 미리 설정된 빈 스파크 프로젝트를 생성하는 메이븐 아키타입 다운로드\)
 
 ```text
@@ -36,11 +36,11 @@ Spark in Action
 * _artifactId_: 프로젝트 이름. ex\) spark, play
 * _groupId_: 프로젝트를 진행한 조직의 고유 명칭. ex\) org.apache, com.typesafe
 
-_groupId_에 `org.sia` 입력, _artifactId_에 `chapter03App` 입력
+_groupId_ 에 `org.sia` 입력, _artifactId_ 에 `chapter03App` 입력
 
 ![3-4 Package explorer](../.gitbook/assets/chapter03-3-4-package-explorer.png) 그러면 위 그림과 같이 `chapter03App`이라는 이름의 프로젝트 루트 폴더가 생성 되고, `org.sia.chapter03App` 이라는 루트 패키지 아래 `App.scala` 애플리케이션 소스 파일이 `src/main/scala` 스칼라 메인 소스 폴더 밑에 자동으로 생성된다.
 
-이 프로젝트는 최상위 의존 라이브러리\(_pom.xml_에 명시적으로 나열된 의존 라이브러리\)를 일곱 개 사용한다.
+이 프로젝트는 최상위 의존 라이브러리\(_pom.xml_ 에 명시적으로 나열된 의존 라이브러리\)를 일곱 개 사용한다.
 
 ## 3.2 스파크 애플리케이션 개발
 
@@ -63,7 +63,7 @@ wget http://data.githubarchive.org/2015-03-01-{0..23}.json.gz
 gunzip 2015-03-01-0.json.gz
 ```
 
-각 로그 파일에는 _유효한 json 문자열 여러 개가 한 줄에 하나씩 기록_되어 있다. 즉 각 줄에는 깃허브 이벤트\(push, branch, create repo 등\) 하나를 json 형태로 저장되어 있다.
+각 로그 파일에는 _유효한 json 문자열 여러 개가 한 줄에 하나씩 기록_ 되어 있다. 즉 각 줄에는 깃허브 이벤트\(push, branch, create repo 등\) 하나를 json 형태로 저장되어 있다.
 
 [jq](http://stedolan.github.io/jq/download)를 이용해 json을 보면 쉽게 구조를 파악할 수 있다.
 
@@ -75,11 +75,11 @@ head -n 1 2015-03-01-0.json | jq '.'
 
 Spark SQL과 `Dataframe`은 JSON 데이터를 스파크로 로드하는 기능을 제공한다. 스파크 버전 1.6.0은 `DataFrame`을 개선하고 일반화한 `Dataset`을 도입했다.
 
-`DataFrame`은 스키마가 있는 `RDD`다. 각 column 별로 이름과 타입을 가진다. 스파크는 정형 데이터셋을 `DataFrame`으로 생성할 때 알아서 데이터 스키마를 유추하며, 이 _데이터 스키마를 참고해 실행 계획을 만들어 더 나은 계산 최적화_를 이끌어낼 수 있다.
+`DataFrame`은 스키마가 있는 `RDD`다. 각 column 별로 이름과 타입을 가진다. 스파크는 정형 데이터셋을 `DataFrame`으로 생성할 때 알아서 데이터 스키마를 유추하며, 이 _데이터 스키마를 참고해 실행 계획을 만들어 더 나은 계산 최적화_ 를 이끌어낼 수 있다.
 
 `DataFrame` API를 이용해 사용자는 스파크 코어 API를 사용하는 것보다 손쉽게 SQL로 원하는 작업을 수행할 수 있다.
 
-스파크 코어는 다른 모든 스파크 컴포넌트를 건설할 수 있는 _기초적인 레고 조각의 집합_으로 생각할 수 있다. `DataFrame`으로 작성한 코드 역시 _스파크 코어 변환 연산자로 자동 변환_된다.
+스파크 코어는 다른 모든 스파크 컴포넌트를 건설할 수 있는 _기초적인 레고 조각의 집합_ 으로 생각할 수 있다. `DataFrame`으로 작성한 코드 역시 _스파크 코어 변환 연산자로 자동 변환_ 된다.
 
 스파크 SQL의 메인 인터페이스인 `SQLContext` 클래스는 스파크 2.0 버전에서 `SparkContext`와 함께 `SparkSession`클래스로 통합되었다. `SQLContext`의 `read` 메서드는 다양한 데이터를 입수하는 데 사용할 수 있는 `DataFrameReader` 객체를 반환한다. 여기서는 json데이터를 읽기 위해 `DataFrameReader`의 `json` 메서드를 사용한다.
 
@@ -117,7 +117,7 @@ println("only pushes: " + pushes.count)
 pushes.show(5) // DataFrame의 상위 다섯 개 Row를 테이블 형태로 출력 (인수를 전달하지 않으면 20개 출력)
 ```
 
-JSON 스키마는 _JSON 파일에 사용된 모든 key의 합집합으로 구성_되며, 각 키에는 _값 타입_과 _널값 허용 여부\(nullable\)_ 가 할당되어 있다. 유추된 스키마에는 nullable이 항상 `true`이다.
+JSON 스키마는 _JSON 파일에 사용된 모든 key의 합집합으로 구성_ 되며, 각 키에는 _값 타입_ 과 _널값 허용 여부\(nullable\)_ 가 할당되어 있다. 유추된 스키마에는 nullable이 항상 `true`이다.
 
 ### 3.2.4 데이터 집계
 
@@ -189,7 +189,7 @@ for 루프 한 사이클의 과정 1. 파일에서 한 라인 읽기 2. 새로�
 
 for 루프가 종료된 후 진행 과정 1. 임시 컬렉션을 for 표현식의 결과로 반환 2. `Set`에 for 표현식의 결과로 반환된 임시 컬렉션 추가 3. `Set`을 `employees`에 할당
 
-위 표현식을 스칼라에서 _for comprehension_이라고 한다. 반복 인덱스 변수를 사용할 필요가 없다.
+위 표현식을 스칼라에서 _for comprehension_ 이라고 한다. 반복 인덱스 변수를 사용할 필요가 없다.
 
 이제 직원들의 이름을 담은 `Set`을 이용해 `ordered`에 `filter`를 적용해보자.
 
@@ -199,15 +199,15 @@ _**filter 메서드 시그니처**_
 def filter(conditionExpr: String): Dataset
 ```
 
-이 `filter`메서드는 주어진 _SQL 표현식_을 사용해 결과값을 얻어낸다.
+이 `filter`메서드는 주어진 _SQL 표현식_ 을 사용해 결과값을 얻어낸다.
 
 ```scala
 val oldPeopleDf = peopleDf.filter("age > 15")
 ```
 
-하지만 위와 같은 단순 비교와 다르게 우리는 `ordered`의 `login` 컬럼과 방금 얻어낸 직원 ID를 보유한 `Set`을 비교해 `Set`에 포함되지 않은 로우들만 제외해야 한다. `Dataset`의 `filter`함수를 사용하면 손쉽게 할 수 있지만, `DataFrame`의 SQL 표현식에서는 이 함수를 사용할 수 없다. 대신 스파크의 _User-Defined Function_을 사용할 수 있다.
+하지만 위와 같은 단순 비교와 다르게 우리는 `ordered`의 `login` 컬럼과 방금 얻어낸 직원 ID를 보유한 `Set`을 비교해 `Set`에 포함되지 않은 로우들만 제외해야 한다. `Dataset`의 `filter`함수를 사용하면 손쉽게 할 수 있지만, `DataFrame`의 SQL 표현식에서는 이 함수를 사용할 수 없다. 대신 스파크의 _User-Defined Function_ 을 사용할 수 있다.
 
-_사용자 정의 함수는 `SparkSession` 클래스의 UDF메서드로 등록_한다. 우리는 아래처럼 함수를 만들 수 있다.
+_사용자 정의 함수는 `SparkSession` 클래스의 UDF메서드로 등록_ 한다. 우리는 아래처럼 함수를 만들 수 있다.
 
 ```scala
 val isEmp: (String => Boolean) = (user: String) => employees.contains(user)
@@ -224,7 +224,7 @@ val isEmp = user => employees.contains(user)
 val isEmployees = spark.udf.register("isEmpUDF", isEmp)
 ```
 
-이렇게 등록된 UDF는 스파크 클러스터에서 실행될 수 있다. 스파크는 UDF에 필요한 객체\(`employees`\)를 모두 가져와 _클러스터에서 실행하는 모든 태스크에 전송_한다.
+이렇게 등록된 UDF는 스파크 클러스터에서 실행될 수 있다. 스파크는 UDF에 필요한 객체\(`employees`\)를 모두 가져와 _클러스터에서 실행하는 모든 태스크에 전송_ 한다.
 
 ### 3.2.6 공유 변수
 
@@ -282,7 +282,7 @@ _pom.xml_ 파일을 열어 _Dependency Hierarchy_ 탭으로 전환하면 애플�
 
 이 책에서는 uberjar를 이용해 실습할텐데, 그 전에 외부 의존 라이브러리를 하나 더 추가하자. 이제 우리는 우리의 애플리케이션과 함께 이 외부 의존 라이브러리와 이 라이브러리가 사용하는 모든 의존 라이브러리를 포함한 JAR파일을 배포해야 한다.
 
-_pom.xml_에 아래와 같은 내용 추가
+_pom.xml_ 에 아래와 같은 내용 추가
 
 ```markup
 <dependency>
@@ -295,7 +295,7 @@ _pom.xml_에 아래와 같은 내용 추가
 
 ### 3.3.2 애플리케이션의 적응력 올리기
 
-운영 환경에서 _spark-submit 스크립트_로 애플리케이션을 실행하기 위해 아래 코드를 변경해 애플리케이션 이름과 스파크 마스터를 지정하는 부분을 _spark-submit 인수로 전달_하도록 변경해보자.
+운영 환경에서 _spark-submit 스크립트_ 로 애플리케이션을 실행하기 위해 아래 코드를 변경해 애플리케이션 이름과 스파크 마스터를 지정하는 부분을 _spark-submit 인수로 전달_ 하도록 변경해보자.
 
 ```scala
 val spark = SparkSession.builder()
@@ -308,7 +308,7 @@ val spark = SparkSession.builder()
 val spark = SparkSession.builder().getOrCreate()
 ```
 
-이 외에 로그 파일 경로나 프로그램 결과를 출력할 파일 경로, 출력 파일의 형식 등을 애플리케이션 매개 변수로 변경해 _spark-submit_을 호출하는 사람이 결정하도록 코드를 변경한다.
+이 외에 로그 파일 경로나 프로그램 결과를 출력할 파일 경로, 출력 파일의 형식 등을 애플리케이션 매개 변수로 변경해 _spark-submit_ 을 호출하는 사람이 결정하도록 코드를 변경한다.
 
 모든 소스코드를 변경했으면, Goal을 `clean package`로 입력하여 Maven Build를 실행한다.
 
@@ -316,11 +316,11 @@ val spark = SparkSession.builder().getOrCreate()
 
 ### 3.3.3 spark-submit 사용
 
-_spark-submit_은 스파크 애플리케이션을 제출하는 일종의 헬퍼 스크립트로 _애플리케이션을 스파크 클러스터에서 실행_하는 데 사용한다.
+_spark-submit_ 은 스파크 애플리케이션을 제출하는 일종의 헬퍼 스크립트로 _애플리케이션을 스파크 클러스터에서 실행_ 하는 데 사용한다.
 
-가상 머신에서 스파크 로그는 _/usr/local/spark/logs/info.log_에 떨어지므로 이 파일로 애플리케이션 실행 로그를 확인하면 된다.
+가상 머신에서 스파크 로그는 _/usr/local/spark/logs/info.log_ 에 떨어지므로 이 파일로 애플리케이션 실행 로그를 확인하면 된다.
 
-터미널에서 jar가 있는 _target_디렉토리 위치에서 아래 명령을 실행
+터미널에서 jar가 있는 _target_ 디렉토리 위치에서 아래 명령을 실행
 
 ```bash
 spark-submit --class org.sia.chapter03App.GitHubDay --master local[*] --name "Daily GitHub Push Counter" chapter03App-0.0.1-SNAPSHOT.jar "$HOME/sia/github-archive/*.json" "$HOME/first-edition/ch03/ghEmployees.txt" "$HOME/sia/emp-gh-push-output" "json"
@@ -332,5 +332,5 @@ spark-submit --class org.sia.chapter03App.GitHubDay --master local[*] --name "Da
 spark-submit --master local[*] --name "Daily GitHub Push Counter" GitHubDay.py "$HOME/sia/github-archive/*.json" "$HOME/first-edition/ch03/ghEmployees.txt" "$HOME/sia/emp-gh-push-output" "json"
 ```
 
-애플리케이션이 정상적으로 실행되고 나면 _$HOME/sia/emp-gh-push-output_ 디렉토리에서 결과 json파일들을 확인할 수 있다. 결과 폴더에 있는 _\_SUCCESS_ 파일은 _작업을 성공적으로 완료했음을 의미_하며 _crc_ 파일은 각 데이터 파일의 유효성을 검사하는 데 사용한다. 마지막으로 _\_SUCCESS.crc_ 파일은 모든 CRC파일을 검사한 결과가 성공적이라는 걸 의미한다.
+애플리케이션이 정상적으로 실행되고 나면 _$HOME/sia/emp-gh-push-output_ 디렉토리에서 결과 json파일들을 확인할 수 있다. 결과 폴더에 있는 _\_SUCCESS_ 파일은 _작업을 성공적으로 완료했음을 의미_ 하며 _crc_ 파일은 각 데이터 파일의 유효성을 검사하는 데 사용한다. 마지막으로 _\_SUCCESS.crc_ 파일은 모든 CRC파일을 검사한 결과가 성공적이라는 걸 의미한다.
 

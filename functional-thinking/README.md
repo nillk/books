@@ -16,7 +16,7 @@
 
 * [Chapter 4: 열심히보다는 현명하게](chapter04-smarter-not-harder.md)  
 
-  _움직이는 부분_을 제거하는 예제 두 가지에 중점 \(런타임에 함수 결과를 캐싱하고, 게으름을 구현하는 방법\)
+  _움직이는 부분_ 을 제거하는 예제 두 가지에 중점 \(런타임에 함수 결과를 캐싱하고, 게으름을 구현하는 방법\)
 
 * [Chapter 5: 진화하라](chapter05-evolve.md)  
 
@@ -33,4 +33,5 @@
 * [Chapter 8: 폴리글랏과 폴리패러다임](chapter08-polyglot-and-polyparadigm.md)  
 
   복잡한 패러다임의 세상 속에서 산다는 일의 장단점
+
 

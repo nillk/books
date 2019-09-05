@@ -5,7 +5,7 @@
 ### Important aspects of stream processing
 
 * Delivery Guarantees: 입력된 데이터가 처리될 것이라는 보장
-  * Atleast-once: 장애에 상관 없이 _최소 한 번_은 처리 됨
+  * Atleast-once: 장애에 상관 없이 _최소 한 번_ 은 처리 됨
   * Atmost-once: 장애의 경우 처리되지 않을 수 있음
   * Exactly-once: 장애에 상관 없이 딱 한 번 처리됨 당연히 이게 가장 바람직하지만 분산 시스템에서 달성하기가 어려움 보통은 성능과 trade-off
 * Fault Tolerance: 노드나 네트워크 등 뭔가 장애가 있을 때 프레임워크가 복구할 수 있어야 하고, 실패한 시점부터 다시 시작할 수 있어야 함. state checkpointing을 통해 구현될 수 있음.
@@ -55,7 +55,7 @@ State는 기본적으로 _stream을 처리할 때 유지되어야 하는 interme
 
 Spark가 Hadoop batch의 성공적 후계자\(?\)라면 Flink는 Storm의 후계자라고 볼 수 있다
 
-Spark와 반대로 data를 _batch로 처리하는 것을 예외적인 케이스_로 생각하며, streaming과 batch를 처리하기 위한 API가 다름
+Spark와 반대로 data를 _batch로 처리하는 것을 예외적인 케이스_ 로 생각하며, streaming과 batch를 처리하기 위한 API가 다름
 
 * `DataStream`: Streaming data\(unbounded streams\)를 처리하기 위한 클래스. immutable
 * `DataSet`: Batch\(bounded streams\) 처리하기 위한 클래스. immutable. Bounded stream 데이터를 streaming 형식으로 처리. Checkpoint를 사용하지 않고 장애시 모두 재실행
@@ -271,7 +271,7 @@ Stadalone, Container, YARN, Mesos 등 가능
 
 ### Windows
 
-Streaming data는 unbounded data이기 때문에 각 element를 개별적으로 처리 하는 연산이라면 별 문제가 없는데, 집계 연산을 사용하는 경우 문제가 생긴다. 처음와 끝을 모르는데 평균값을 어떻게 구할까? 그래서 Windows라는 개념이 존재. _특정한 룰에 따라 일정 데이터를 모아 처리하는 개념_으로 Flink에서는 간단하게 `window`만 구현하면 된다.
+Streaming data는 unbounded data이기 때문에 각 element를 개별적으로 처리 하는 연산이라면 별 문제가 없는데, 집계 연산을 사용하는 경우 문제가 생긴다. 처음와 끝을 모르는데 평균값을 어떻게 구할까? 그래서 Windows라는 개념이 존재. _특정한 룰에 따라 일정 데이터를 모아 처리하는 개념_ 으로 Flink에서는 간단하게 `window`만 구현하면 된다.
 
 #### Keyed Windows
 
@@ -369,7 +369,7 @@ stream
 
 **Global Windows**
 
-하나의 window로 모든 데이터를 처리. 따라서 _trigger_와 _evictor_를 설정해야 한다.
+하나의 window로 모든 데이터를 처리. 따라서 _trigger_ 와 _evictor_ 를 설정해야 한다.
 
 * trigger: 가져올 데이터에 대한 정의
 * evictor: 처리할 데이터에 대한 정의
@@ -415,7 +415,7 @@ stream
 
 ### Checkpoint
 
-Data source를 어느 정도 레코드 묶음 단위로 data stream 중간에 _checkpoint barrier_를 끼워 넣는다. 그래서 이 barrier가 Data sink에 도착하면 계산 완료로 간주\(source에서 필요 없는 데이터 삭제함\) -&gt; fault tolerance
+Data source를 어느 정도 레코드 묶음 단위로 data stream 중간에 _checkpoint barrier_ 를 끼워 넣는다. 그래서 이 barrier가 Data sink에 도착하면 계산 완료로 간주\(source에서 필요 없는 데이터 삭제함\) -&gt; fault tolerance
 
 중간에 문제가 생기면 checkpoint부터 다시 처리 -&gt; exactly-once 보장
 

@@ -10,9 +10,9 @@
 
 ## 5.1 DataFrame 다루기
 
-RDD는 _데이터를 직접 다룰 수 있는 스파크 하위 레벨 인터페이스이자 스파크 런타임의 핵심!_ DataFrame API는 스파크 버전 1.3에서 소개되었으며, 칼럼 이름과 타입이 지정된 _테이블 형식의 분산 정형 데이터_를 손쉽게 다룰 수 있는 상위 레벨 인터페이스를 제공한다. 스파크 2.0은 DataFrame을 DataSet의 일종으로 구현했다.
+RDD는 _데이터를 직접 다룰 수 있는 스파크 하위 레벨 인터페이스이자 스파크 런타임의 핵심!_ DataFrame API는 스파크 버전 1.3에서 소개되었으며, 칼럼 이름과 타입이 지정된 _테이블 형식의 분산 정형 데이터_ 를 손쉽게 다룰 수 있는 상위 레벨 인터페이스를 제공한다. 스파크 2.0은 DataFrame을 DataSet의 일종으로 구현했다.
 
-스파크 DataFrame은 SQL 및 도메인 특화 언어\(DSL\)로 작성된 표현식을 _최적화된 하위 레벨 RDD 연산으로 변환_한다. 또한 DataFrame을 테이블 카탈로그에 등록하여 다른 스파크 애플리케이션에서도 DataFrame 이름을 이용해 데이터에 질의를 수행할 수 있게 한다. 이는 데이터 자체를 저장하는 것이 아니라 _정형 데이터로 접근하는 방법만 저장_한다.
+스파크 DataFrame은 SQL 및 도메인 특화 언어\(DSL\)로 작성된 표현식을 _최적화된 하위 레벨 RDD 연산으로 변환_ 한다. 또한 DataFrame을 테이블 카탈로그에 등록하여 다른 스파크 애플리케이션에서도 DataFrame 이름을 이용해 데이터에 질의를 수행할 수 있게 한다. 이는 데이터 자체를 저장하는 것이 아니라 _정형 데이터로 접근하는 방법만 저장_ 한다.
 
 스파크 쓰리프트 서버를 이용하면 스파크 외부의 비스파크 애플리케이션에서도 표준 JDBC 및 ODBC 프로토콜로 일반적인 SQL쿼리를 전송하여 스파크 DataFrame에서 질의를 수행할 수 있다.
 
@@ -87,7 +87,7 @@ scala> itPostsDF.printSchema
 
 #### 5.1.1.4 케이스 클래스를 사용해 RDD를 DataFrame으로 변환
 
-RDD의 각 로우를 _케이스 클래스_로 매핑한 후 `toDF` 메서드 호출
+RDD의 각 로우를 _케이스 클래스_ 로 매핑한 후 `toDF` 메서드 호출
 
 ```scala
 import java.sql.Timestamp
@@ -207,7 +207,7 @@ DataFrame은 대부분 RDB에서 일반적으로 지원하는 `String`, `integer
 
 ### 5.1.2 기본 DataFrame API
 
-DataFrame의 DSL은 RDB의 SQL과 유사한 기능을 제공. DataFrame은 RDD와 마찬가지로 _불변성_과 _지연 실행_하는 특징이 있다.
+DataFrame의 DSL은 RDB의 SQL과 유사한 기능을 제공. DataFrame은 RDD와 마찬가지로 _불변성_ 과 _지연 실행_ 하는 특징이 있다.
 
 #### 5.1.2.1 칼럼 선택
 
@@ -241,9 +241,9 @@ val postsIds = postsIdBody.drop("body")
 
 #### 5.1.2.2 데이터 필터링
 
-`where`와 `filter`가 있으며 두 함수는 동일하게 동작한다. 이 두 함수는 _1. `Column` 객체_ 또는 _2. SQL구문으로 이루어진 문자열 표현식_을 인수로 받는다.
+`where`와 `filter`가 있으며 두 함수는 동일하게 동작한다. 이 두 함수는 _1. `Column` 객체_ 또는 _2. SQL구문으로 이루어진 문자열 표현식_ 을 인수로 받는다.
 
-`Column` 클래스는 칼럼 이름을 지정하는 기능 외에 _다양한 유사 SQL 연산자를 제공_하며, _이 연산자를 사용해 구성한 표현식의 타입 또한 `Column`_ 클래스다.
+`Column` 클래스는 칼럼 이름을 지정하는 기능 외에 _다양한 유사 SQL 연산자를 제공_ 하며, _이 연산자를 사용해 구성한 표현식의 타입 또한 `Column`_ 클래스다.
 
 ```scala
 'body
@@ -264,7 +264,7 @@ postsDf.filter(('postTypeId === 1) and ('acceptedAnswerId isNull))
 
 [전체 `Column` 연산자](http://spark.apache.org/docs/2.0.0/api/scala/index.html#org.apache.spark.sql.Column)
 
-`limit` 함수로 _DataFrame 상위 n개 로우를 선택_할 수 있다.
+`limit` 함수로 _DataFrame 상위 n개 로우를 선택_ 할 수 있다.
 
 ```scala
 val firstTenQs = postsDf.filter('postTypeId === 1).limit(10)
@@ -290,7 +290,7 @@ postsDf.filter('postTypeId === 1).withColumn("ratio", 'viewCount / 'score).where
 
 ### 5.1.3 SQL 함수로 데이터 연산 수행
 
-스파크 SQL은 데이터에 연산을 수행할 수 있는 함수를 지원하며 _DataFrame API_나 _SQL 표현식_으로 사용할 수 있다.
+스파크 SQL은 데이터에 연산을 수행할 수 있는 함수를 지원하며 _DataFrame API_ 나 _SQL 표현식_ 으로 사용할 수 있다.
 
 스파크 SQL 함수의 네 가지 카테고리
 
@@ -313,7 +313,7 @@ import org.apache.spark.sql.functions._
 * 문자열 연산: `substring`, `length`, `trim`, `concat` ...
 * 날짜 및 시간 연산: `year`, `date_add` ...
 
-집계 함수는 _보통 `groupBy`와 함께_ 쓰지만 `select`나 `withcolumn` 메서드에 사용하면 _전체 데이터셋을 대상으로 값을 집계_할 수 있다.
+집계 함수는 _보통 `groupBy`와 함께_ 쓰지만 `select`나 `withcolumn` 메서드에 사용하면 _전체 데이터셋을 대상으로 값을 집계_ 할 수 있다.
 
 스파크 집계 함수 예시
 
@@ -339,9 +339,9 @@ postsDf.select(avg('score), max('score), count('score)).show
 
 #### 5.1.3.2 윈도 함수
 
-집계 함수와 유사하지만, _로우들을 단일 결과로만 그루핑하지 않는다._ 윈도 함수에는 _움직이는 그룹,_ 즉 프레임\(frame\)을 정의한다. 프레임은 윈도 함수가 _현재 처리하는 로우와 관련된 다른 로우 집합_으로 정의하며, 이 집합을 현재 로우 계산에 활용할 수 있다.
+집계 함수와 유사하지만, _로우들을 단일 결과로만 그루핑하지 않는다._ 윈도 함수에는 _움직이는 그룹,_ 즉 프레임\(frame\)을 정의한다. 프레임은 윈도 함수가 _현재 처리하는 로우와 관련된 다른 로우 집합_ 으로 정의하며, 이 집합을 현재 로우 계산에 활용할 수 있다.
 
-윈도 함수를 사용하려면 집계 함수나 랭킹 함수, 분석 함수 등을 사용해 `Column` 정의를 구성한 후, 윈도 사양\(`WindowSpec` 객체\)을 생성하고, 이를 `Column`의 `over` 함수에 인수로 전달한다. `over` 함수는 이 윈도 사양을 사용하는 _윈도 칼럼_을 정의해 반환한다.
+윈도 함수를 사용하려면 집계 함수나 랭킹 함수, 분석 함수 등을 사용해 `Column` 정의를 구성한 후, 윈도 사양\(`WindowSpec` 객체\)을 생성하고, 이를 `Column`의 `over` 함수에 인수로 전달한다. `over` 함수는 이 윈도 사양을 사용하는 _윈도 칼럼_ 을 정의해 반환한다.
 
 윈도 사양을 만드는 세 가지 방법
 
@@ -433,13 +433,13 @@ val postsRdd = postsDf.rdd
 // postsRDD: org.apache.spark.rdd.RDD[org.apache.spark.sql.Row]
 ```
 
-DataFrame 데이터와 파티션을 `map`이나 `flatMap`, `mapPartitions` 등의 변환 연산자로 매핑하면 _실제 매핑 작업은 하부 RDD에서 실행_되므로, 연산의 결과는 새로운 DataFrame이 아니라 **새로운 RDD**가 된다.
+DataFrame 데이터와 파티션을 `map`이나 `flatMap`, `mapPartitions` 등의 변환 연산자로 매핑하면 _실제 매핑 작업은 하부 RDD에서 실행_ 되므로, 연산의 결과는 새로운 DataFrame이 아니라 **새로운 RDD**가 된다.
 
 DataFrame 변환 연산자는 스키마를 변경할 수 있으며, RDD의 `Row` 객체를 다른 타입으로 변환할 수 있다. 하지만 스키마가 변경되지 않았을 경우 RDD를 다시 DataFrame으로 자동으로 변환할 수 있지만, 스키마가 변경된 경우는 자동으로 변환할 수 없다.
 
 ### 5.1.6 데이터 그루핑
 
-DataFrame의 그루핑은 `groupBy` 함수로 시작한다. 이 함수는 _칼럼 이름 또는 `Column` 객체의 목록을 받고 `GroupedData` 객체를 반환_한다. `GroupedData`는 지정된 칼럼 값이 모두 동일한 로우 그룹들을 표현한 객체이며, 이 로우 그룹에 대한 집계 함수 \(`count`, `sum`, `max`, `min`, `avg`\)를 제공한다.
+DataFrame의 그루핑은 `groupBy` 함수로 시작한다. 이 함수는 _칼럼 이름 또는 `Column` 객체의 목록을 받고 `GroupedData` 객체를 반환_ 한다. `GroupedData`는 지정된 칼럼 값이 모두 동일한 로우 그룹들을 표현한 객체이며, 이 로우 그룹에 대한 집계 함수 \(`count`, `sum`, `max`, `min`, `avg`\)를 제공한다.
 
 ```scala
 postsDf.groupBy('ownerUserId, 'tags, 'postTypeId).count.orderBy('ownerUserId desc).show(10)
@@ -461,7 +461,7 @@ postsDf.groupBy('ownerUserId).agg(max('lastActivityDate), max('score).gt(5)).sho
 
 #### 5.1.6.2 rollup 및 cube
 
-`groupBy`는 _지정된 칼럼들이 가질 수 있는 모든 조합별_로 집계 연산을 수행하지만, `rollup`과 `cube`는 _지정된 칼럼의 부분 집합을 추가로 사용_해 집계 연산을 수행
+`groupBy`는 _지정된 칼럼들이 가질 수 있는 모든 조합별_ 로 집계 연산을 수행하지만, `rollup`과 `cube`는 _지정된 칼럼의 부분 집합을 추가로 사용_ 해 집계 연산을 수행
 
 * `cube`: 칼럼의 모든 조합\(Combination\)을 대상
 * `rullup`: 지정된 칼럼 순서를 고려한 순열\(Permutation\)
@@ -509,7 +509,7 @@ val postsVotesOuter = postsDf.join(votesDf, postsDf("id") === 'postId, "outer") 
 
 > 사용자에게 도메인 객체\(domain object\)에 대한 변환 연산을 손쉽게 표현할 수 있는 API를 지원함과 동시에, 스파크 SQL 실행 엔진의 빠른 성능과 높은 안정성을 제공하는 것
 
-다시 말해 일반 자바 객체를 `Dataset`에 저장할 수 있고, 스파크 SQL의 _텅스텐 엔진_과 _카탈리스트 최적화_를 활용할 수 있다는 의미
+다시 말해 일반 자바 객체를 `Dataset`에 저장할 수 있고, 스파크 SQL의 _텅스텐 엔진_ 과 _카탈리스트 최적화_ 를 활용할 수 있다는 의미
 
 스파크 2.0에서는 DataFrame을 `Row` 객체로 구성된 `Dataset` 즉, `Dataset[Row]`로 구현했다. 또 DataFrame의 `as` 메서드를 사용해 DataFrame을 `Dataset`으로 변환할 수 있다.
 
@@ -527,11 +527,11 @@ DataFrame DSL 외에 SQL 명령을 사용할 수도 있다. 스파크 SQL은 SQL
 
 DataFrame을 테이블로 등록해 두면 스파크 SQL 쿼리에서 테이블을 참조할 수 있다. 스파크는 테이블 정보를 **테이블 카탈로그\(table catalog\)** 에 저장한다.
 
-하이브 지원 기능이 없는 스파크를 사용하면 테이블 정보를 인-메모리 Map에 저장해서 스파크 세션이 종료되면 사라지지만, 하이브를 지원하는 스파크에서는 하이브 메타스토어\(영구적인 데이터베이스\)에 저장하므로 _스파크를 재시작해도 테이블 정보를 유지_한다.
+하이브 지원 기능이 없는 스파크를 사용하면 테이블 정보를 인-메모리 Map에 저장해서 스파크 세션이 종료되면 사라지지만, 하이브를 지원하는 스파크에서는 하이브 메타스토어\(영구적인 데이터베이스\)에 저장하므로 _스파크를 재시작해도 테이블 정보를 유지_ 한다.
 
 #### 5.3.1.1 테이블을 임시로 등록
 
-`createOrReplaceTempView` 메서드를 사용해 하이브 지원 스파크이든 미지원 스파크이든 _임시로 테이블 정의를 저장_할 수 있다.
+`createOrReplaceTempView` 메서드를 사용해 하이브 지원 스파크이든 미지원 스파크이든 _임시로 테이블 정의를 저장_ 할 수 있다.
 
 ```scala
 postsDf.createOrReplaceTempView("posts_temp") // posts_temp 이름으로 질의 수행 가능
@@ -553,7 +553,7 @@ votesDf.write.mode("overwrite").saveAsTable("votes")
 
 #### 5.3.1.3 스파크 테이블 카탈로그
 
-스파크 2.0부터 `SparkSession`의 `catalog` 필드로 제공되는 `Catalog` 클래스를 이용해 _테이블 카탈로그 관리 기능_을 사용할 수 있다.
+스파크 2.0부터 `SparkSession`의 `catalog` 필드로 제공되는 `Catalog` 클래스를 이용해 _테이블 카탈로그 관리 기능_ 을 사용할 수 있다.
 
 ```scala
 scala> spark.catalog.listTables().show()
@@ -589,7 +589,7 @@ scala> spark.catalog.listFunctions.show() // SQL 함수 목록 조회
 
 #### 5.3.1.4 원격 하이브 메타스토어 설정
 
-스파크는 기존에 설치된 하이브 메타스토어 데이터베이스나 스파크가 사용할 새로운 데이터베이스를 구축해 이를 _원격 메타스토어 데이터베이스_로 지정할 수 있다. 이는 스파크 _conf_ 디렉터리 아래에 있는 _hive-site.xml_ 파일에 설정한다.
+스파크는 기존에 설치된 하이브 메타스토어 데이터베이스나 스파크가 사용할 새로운 데이터베이스를 구축해 이를 _원격 메타스토어 데이터베이스_ 로 지정할 수 있다. 이는 스파크 _conf_ 디렉터리 아래에 있는 _hive-site.xml_ 파일에 설정한다.
 
 원격 하이브 메타스토어를 사용하기 위한 설정
 
@@ -602,7 +602,7 @@ scala> spark.catalog.listFunctions.show() // SQL 함수 목록 조회
 
 ### 5.3.2 SQL 쿼리 실행
 
-DataFrame을 테이블로 등록하면 `SparkSession`의 `sql` 함수로 SQL 표현식을 사용해 데이터에 질의를 실행할 수 있다. 이 _질의의 결과는 DataFrame_이다.
+DataFrame을 테이블로 등록하면 `SparkSession`의 `sql` 함수로 SQL 표현식을 사용해 데이터에 질의를 실행할 수 있다. 이 _질의의 결과는 DataFrame_ 이다.
 
 ```scala
 import spark.sql // spark shell은 임포트되어 있음
@@ -630,7 +630,7 @@ $ spark-sql -e "select substring(title, 0, 70) from posts where postTypeId = 1 o
 
 ### 5.3.3 쓰리프트 서버로 스파크 SQL 접속
 
-스파크 쓰리프트라는 JDBC\(or ODBC\) 서버를 이용해 _원격에서 사용자의 쿼리를 받아 SQL 명령을 실행_할 수 있다. 스파크 쓰리프트는 스파크 클러스터에서 구동되어 전달된 SQL 쿼리를 DataFrame으로 변환한 후, RDD 연산으로 변환해 실행하며, 결과를 JDBC 프로토콜로 반환한다.
+스파크 쓰리프트라는 JDBC\(or ODBC\) 서버를 이용해 _원격에서 사용자의 쿼리를 받아 SQL 명령을 실행_ 할 수 있다. 스파크 쓰리프트는 스파크 클러스터에서 구동되어 전달된 SQL 쿼리를 DataFrame으로 변환한 후, RDD 연산으로 변환해 실행하며, 결과를 JDBC 프로토콜로 반환한다.
 
 #### 5.3.3.1 쓰리프트 서버 시작
 
@@ -644,7 +644,7 @@ $ sbin/start-thriftserver.sh --jars /usr/share/java/postgresql-jdbc4.jar
 
 #### 5.3.3.2 비라인으로 쓰리프트 서버 접속
 
-스파크 _bin_ 디렉터리의 `beeline`은 _쓰리프트 서버로 접속할 수 있는 하이브의 명령줄 셸_이다. 서버 접속이 성공하면 비라인 명령 프롬프트에 HQL 명령을 입력해 쿼리를 실행할 수 있다.
+스파크 _bin_ 디렉터리의 `beeline`은 _쓰리프트 서버로 접속할 수 있는 하이브의 명령줄 셸_ 이다. 서버 접속이 성공하면 비라인 명령 프롬프트에 HQL 명령을 입력해 쿼리를 실행할 수 있다.
 
 #### 5.3.3.3 써드-파티 JDBC 클라이언트로 접속
 
@@ -654,7 +654,7 @@ $ sbin/start-thriftserver.sh --jars /usr/share/java/postgresql-jdbc4.jar
 
 스파크는 다양한 데이터 소스\(다양한 파일 포맷 및 데이터베이스\)를 지원하며, 관계형 데이터베이스와 스파크를 연동하는 `Dialect` 클래스\(JDBC의 `JdbcType` 클래스와 스파크 SQL의 `DataType` 클래스를 매핑하는 클래스\)를 제공한다.
 
-스파크는 메타스토어에 데이터 저장 위치와 저장 방법을 보관하며 _실제 데이터는 데이터 소스에 저장_된다.
+스파크는 메타스토어에 데이터 저장 위치와 저장 방법을 보관하며 _실제 데이터는 데이터 소스에 저장_ 된다.
 
 #### 5.4.1 기본 데이터 소스
 
@@ -662,7 +662,7 @@ $ sbin/start-thriftserver.sh --jars /usr/share/java/postgresql-jdbc4.jar
 
 #### 5.4.1.1 JSON
 
-XML을 대체하는 경량\(lightweight\) 데이터 포맷. 스파크는 _JSON 스키마를 자동으로 유추_할 수 있으므로 외부 시스템과 데이터를 주고받는 포맷으로 매우 적합하지만 영구적으로 저장하는 데 사용하기에는 저장 효율이 떨어진다.
+XML을 대체하는 경량\(lightweight\) 데이터 포맷. 스파크는 _JSON 스키마를 자동으로 유추_ 할 수 있으므로 외부 시스템과 데이터를 주고받는 포맷으로 매우 적합하지만 영구적으로 저장하는 데 사용하기에는 저장 효율이 떨어진다.
 
 #### 5.4.1.2 ORC
 
