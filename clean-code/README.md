@@ -10,7 +10,7 @@
 * [Chapter 6: 객체와 자료 구조](chapter06-objects-and-data-structures.md)
 * [Chapter 7: 오류 처리](chapter07-error-handling.md)
 * [Chapter 8: 경계](chapter08-boundaries.md)
-* Chapter 9: 단위 테스트
+* [Chapter 9: 단위 테스트](chapter09-unit-tests.md)
 * Chapter 10: 클래스
 * Chapter 11: 시스템
 * Chapter 12: 창발성
