@@ -1,7 +1,7 @@
 # Table of contents
 
-* [Initial page](README.md)
-* [스파크를 다루는 기술 Spark In Action](spark-in-action/README.md)
+* [The books I read](README.md)
+* [스파크를 다루는 기술](spark-in-action/README.md)
   * [1장 아파치 스파크 소개](spark-in-action/chapter01-introduction-to-apache-spark.md)
   * [2장 스파크의 기초](spark-in-action/chapter02-spark-fundamentals.md)
   * [3장 스파크 애플리케이션 작성하기](spark-in-action/chapter03-writing-spark-applications.md)
@@ -21,7 +21,7 @@
   * [Chapter 7. 실용적 사고](functional-thinking/chapter07-practical-thinking.md)
   * [Chapter 8. 폴리글랏과 폴리패러다임](functional-thinking/chapter08-polyglot-and-polyparadigm.md)
   * [FunctionalThinking](functional-thinking/functionalthinking.md)
-* [CLEAN CODE](clean-code/README.md)
+* [Clean Code](clean-code/README.md)
   * [Chapter 1. Clean Code](clean-code/chapter01-clean-code.md)
   * [Chapter 2. 의미 있는 이름](clean-code/chapter02-meaningful-names.md)
   * [Chapter 3. 함수](clean-code/chapter03-functions.md)
@@ -30,7 +30,7 @@
   * [Chapter 6. 객체와 자료 구조](clean-code/chapter06-objects-and-data-structures.md)
   * [Chapter 7. 오류 처리](clean-code/chapter07-error-handling.md)
   * [Chapter 8. 경계](clean-code/chapter08-boundaries.md)
-* [Functional-Programming-In-Scala](functional-programming-in-scala/README.md)
+  * [Chapter 9. 단위 테스트](clean-code/chapter09-unit-tests.md)
+* [Functional Programming in Scala](functional-programming-in-scala/README.md)
   * [Chapter 8. 속성 기반 검사](functional-programming-in-scala/chapter08-property-based-testing.md)
 * [flink-research](flink-research.md)
-

@@ -1,4 +1,11 @@
-# 스파크를 다루는 기술 Spark In Action
+---
+title: Spark in Action
+description: 스파크와 빅데이터를 위한 현장 밀착 입문서!
+author: Petar Zecevic, Marko Bonaci
+date: 2018-05-24
+---
+
+# 스파크를 다루는 기술
 
 ## 제 1부 첫걸음
 
@@ -13,7 +20,7 @@
 * [6장 스파크 스트리밍으로 데이터를 흐르게 하자](chapter06-ingesting-data-with-spark-streaming.md)
 * [7장 MLlib로 더 똑똑해지자](chapter07-getting-smart-with-mllib.md)
 * [8장 스파크 ML로 만드는 분류와 군집화](chapter08-ml-classification-and-clustering.md)
-* [9장 점을 연결하는 GraphX](https://github.com/nillk/TIL/tree/3c6424e4329f516067f44b3217c791ffbf08e908/Spark-In-Action/Chapter09-Connecting-the-dots-with-graphx.md)
+* [9장 점을 연결하는 GraphX](chapter09-connecting-the-dots-with-graphx.md)
 
 ## 제 3부 스파크 옵스
 
@@ -31,4 +38,3 @@
 * 부록A 아파치 스파크 설치
 * 부록B 맵리듀스
 * 부록C 선형 대수학 입문
-
