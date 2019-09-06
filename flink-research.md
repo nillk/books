@@ -33,13 +33,13 @@ State는 기본적으로 _stream을 처리할 때 유지되어야 하는 interme
 
 1. State of Progress \(of Stream Processing\)
 
-   stream processing의 metadata. checkpointing/saving of offsets of incoming data -&gt; fault tolerance -&gt; restart, upgrade, task failures...  
+   stream processing의 metadata. checkpointing/saving of offsets of incoming data -&gt; fault tolerance -&gt; restart, upgrade, task failures...
 
    stateless, stateful 둘 다 필요로 함
 
 2. State of Data \(being processed in Stream Processing\)
 
-   데이터에서 파생된 intermediate information  
+   데이터에서 파생된 intermediate information
 
    stateful 에서만 필요함
 
@@ -49,7 +49,7 @@ State는 기본적으로 _stream을 처리할 때 유지되어야 하는 interme
 * Native streaming -&gt; low latency
 * Exactly-once
 * Stateful operations: 각 operator들이 데이터 처리 상태를 관리함
-* Long running operator  
+* Long running operator
 
   each function like map, filter, reduce, etc is implemented as long running operator
 

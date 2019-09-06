@@ -21,7 +21,7 @@ _**함수는 프로그램의 가장 기본적인 단위**_
 문제! 그 **한 가지** 가 뭘까
 
 * 지정된 함수 이름 아래 **추상화 수준**이 하나
-* 우리가 함수를 만드는 이유를 생각해봐!  
+* 우리가 함수를 만드는 이유를 생각해봐!
 
   큰 개념\(다시 말해, 함수 이름\)을 다음 추상화 수준에서 여러 단계로 나눠 수행하기 위함 아님?
 
@@ -62,13 +62,13 @@ _본질적으로 N가지를 처리하기 때문에 **한 가지**만 처리하�
 
 인수 1개인 두 가지 경우
 
-* 인수에 질문을 던짐  
+* 인수에 질문을 던짐
 
   ```java
   boolean fileExists("MyFile")
   ```
 
-* 인수를 뭔가로 변환해 결과 반환  
+* 인수를 뭔가로 변환해 결과 반환
 
   ```java
   InputStream fileOpen("MyFile")
@@ -118,13 +118,13 @@ String format(String format, Object... args)
 
 함수의 의도와 인수의 순서와 의도를 제대로 표현하려면? _**좋은 함수 이름**_
 
-* 단항 함수는 함수와 인수가 동사/명사 쌍을 이뤄야 함  
+* 단항 함수는 함수와 인수가 동사/명사 쌍을 이뤄야 함
 
   ```java
   writeField(name)
   ```
 
-* 함수 이름에 인수 이름을 넣어보자!  
+* 함수 이름에 인수 이름을 넣어보자!
 
   ```java
   assertExpectedEqualsActual(expected, actual)
@@ -136,11 +136,11 @@ String format(String format, Object... args)
 
 _**함수 명에 나와있지 않은 일 하지마!**_
 
-* `checkPassword`함수 내부에서 `session.initialize()` 한다면?  
+* `checkPassword`함수 내부에서 `session.initialize()` 한다면?
 
   함수 이름만 보고 호출했다가 세션 정보 bye~
 
-* 일시적 결합 초래  
+* 일시적 결합 초래
 
   특정 상황 즉, 세션을 초기화해도 괜찮은 경우에만 호출 가능
 

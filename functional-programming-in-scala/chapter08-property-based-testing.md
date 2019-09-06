@@ -32,11 +32,11 @@ failingProp.check
 
 속성 기반 검사 라이브러리들이 갖춘 유용한 기능들
 
-* Test case minimization  
+* Test case minimization
 
   어떤 속성이 크기가 10인 목록에 대해 실패한다면, 프레임워크는 그 검사에 실패하는 가장 작은 목록에 도달할 때까지 점점 더 작은 목록으로 검사를 수행하고, 찾아낸 최소의 목록을 보고한다.
 
-* Exhaustive test case generation  
+* Exhaustive test case generation
 
   `Gen[A]`가 생성할 수 있는 모든 값의 집합을 정의역이라고 부르는데, 이 정의역이 충분히 작다면 표본 값을 생성하는 대신 전수 검사를 할 수 있다.
 

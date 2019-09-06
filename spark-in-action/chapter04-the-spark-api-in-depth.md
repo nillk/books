@@ -21,11 +21,11 @@
 
 한 쇼핑 사이트에서 특정 규칙에 따라 사은품을 추가하는 프로그램을 개발해보자. 사은품은 구매 금액이 0.00달러인 추가 거래로 기입해야 한다.
 
-* 데이터 셋  
+* 데이터 셋
 
   [https://github.com/spark-in-action/first-edition/tree/master/ch04/ch04\_data\_transactions.txt](https://github.com/spark-in-action/first-edition/tree/master/ch04/ch04_data_transactions.txt)
 
-* 파일 포맷  
+* 파일 포맷
 
   구매날짜\#시간\#고객ID\#상품ID\#구매수량\#구매금액
 
