@@ -11,7 +11,7 @@
   * [7장 MLlib로 더 똑똑해지자](spark-in-action/chapter07-getting-smart-with-mllib.md)
   * [8장 스파크 ML로 만드는 분류와 군집화](spark-in-action/chapter08-ml-classification-and-clustering.md)
   * [9장 점을 연결하는 GraphX](spark-in-action/chapter09-connecting-the-dots-with-graphx.md)
-* [Functional Thinking](functional-thinking/README.md)
+* [함수형 사고](functional-thinking/README.md)
   * [Chapter 1. Why](functional-thinking/chapter01-why.md)
   * [Chapter 2. 전환](functional-thinking/chapter02-shift.md)
   * [Chapter 3. 양도하라](functional-thinking/chapter03-cede.md)

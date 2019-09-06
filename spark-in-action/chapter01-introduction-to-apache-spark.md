@@ -133,9 +133,9 @@ HDFS, Apache Kafka, Apache Flume, Twitter, ZeroMQ, 사용자 정의 커스텀 �
    ```
 
    * 로그 파일의 각 블록이 저장된 위치를 하둡에게 요청
-   * 모든 블록을 **클러스터 노드의 RAM 메모리**로 전송  
+   * 모든 블록을 **클러스터 노드의 RAM 메모리**로 전송
 
-     작업이 완료되면 스파크 셸에서 RAM에 저장된 각 블록\(partition\) 참조 가능  
+     작업이 완료되면 스파크 셸에서 RAM에 저장된 각 블록\(partition\) 참조 가능
 
      **Partition의 집합이 바로 RDD가 참조하는 분산 컬렉션**
 
@@ -163,7 +163,7 @@ HDFS, Apache Kafka, Apache Flume, Twitter, ZeroMQ, 사용자 정의 커스텀 �
 * [아파치 지라프](http://giraph.apache.org/) - 스파크 GraphX
 * [아파치 머하웃](https://mahout.apache.org/) - 스파크 MLlib
 * [아파치 스톰](http://storm.apache.org/) - 스파크 스트리밍
-* [아파치 피그](https://pig.apache.org/), [아파치 스쿱](http://sqoop.apache.org/) - 스파크 코어, 스파크 SQL  
+* [아파치 피그](https://pig.apache.org/), [아파치 스쿱](http://sqoop.apache.org/) - 스파크 코어, 스파크 SQL
 
   혹은 스파크에서 피그를 실행할 수 있음
 
