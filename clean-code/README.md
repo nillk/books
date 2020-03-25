@@ -19,7 +19,7 @@ date: 2010-03-11
 * [Chapter 8: 경계](chapter08-boundaries.md)
 * [Chapter 9: 단위 테스트](chapter09-unit-tests.md)
 * [Chapter 10: 클래스](chapter10-classes.md)
-* Chapter 11: 시스템
+* [Chapter 11: 시스템](chapter11-systems.md)
 * Chapter 12: 창발성
 * Chapter 13: 동시성
 * Chapter 14: 점진적 개선
